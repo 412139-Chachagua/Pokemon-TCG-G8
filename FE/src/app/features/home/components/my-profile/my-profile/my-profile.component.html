@@ -1,0 +1,44 @@
+<div class="card-wrapper">
+  <div class="card-inner">
+
+    <div class="card-header">
+      <span>&#10022; FICHA DE ENTRENADOR &#10022;</span>
+    </div>
+
+    <p class="card-id">N.&ordm; ID / {{ trainerId() }}</p>
+
+    <div class="card-grid">
+
+      <div class="card-fields">
+
+        <div class="card-field">
+          <span class="field-label">Nombre</span>
+          <span class="field-value">{{ playerName() }}</span>
+        </div>
+
+        <div class="card-field">
+          <span class="field-label">T. de Juego</span>
+          <span class="field-value">{{ playtime() }}</span>
+        </div>
+
+        <div class="card-field">
+          <span class="field-label">Comienzo Aventura</span>
+          <span class="field-value">{{ startDate() }}</span>
+        </div>
+
+      </div>
+
+      <div class="avatar-box">
+        @if (avatarUrl() && !avatarLoadError()) {
+          <img class="avatar-image" [src]="avatarUrl()" [alt]="playerName()" (error)="onAvatarError()" />
+        } @else {
+          <div class="avatar-placeholder">
+            <span>{{ avatarInitials() }}</span>
+          </div>
+        }
+      </div>
+
+    </div>
+
+  </div>
+</div>

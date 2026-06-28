@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import "tailwindcss";
+@import "./app/shared/styles/pk-theme.css";
+@import "./app/shared/styles/match-animations.css";
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--pk-surface, #1a0a2e);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pk-panel, #5a3d7a);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pk-btn, #6b4d8a);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pk-panel, #5a3d7a) var(--pk-surface, #1a0a2e);
+}

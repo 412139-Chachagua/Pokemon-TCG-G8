@@ -1,0 +1,72 @@
+schema: spec-driven
+
+context: |
+  Project: Pokémon TCG TPI for Programación III.
+
+
+  Stack:
+  - Backend: Java 21, Spring Boot 3.x, Maven.
+  - Frontend: Angular 21+, TypeScript, RxJS.
+  - Database: PostgreSQL.
+  - Real-time communication: WebSockets.
+  - External API: pokemontcg.io v2.
+  - Mandatory card set: xy1.
+
+  Repository structure:
+  - Backend must live under /backend.
+  - Frontend must live under /frontend.
+  - Contracts live under /docs/contracts_ai.
+  - OpenSpec changes live under /openspec/changes.
+  - OpenSpec source-of-truth specs live under /openspec/specs.
+
+  Architecture:
+  - Backend is the only source of truth for game state and rules.
+  - Frontend only renders server state and sends GameAction requests.
+  - Game Engine must be isolated from Spring, JPA, REST, WebSocket and repositories.
+  - Do not implement postponed features before MVP: auth, JWT, ranking, chat, animations, multiple expansions, Mega Evolution.
+
+  Mandatory contracts:
+  - /docs/contracts/00-contract-index.md
+  - /docs/contracts/01-project-scope-contract.md
+  - /docs/contracts/02-project-structure-contract.md
+  - /docs/contracts/03-enums-contract.md
+  - /docs/contracts/04-card-model-contract.md
+  - /docs/contracts/05-deck-contract.md
+  - /docs/contracts/06-game-state-contract.md
+  - /docs/contracts/07-setup-flow-contract.md
+  - /docs/contracts/08-game-action-contract.md
+  - /docs/contracts/09-rule-validation-contract.md
+  - /docs/contracts/10-attack-pipeline-contract.md
+  - /docs/contracts/11-status-effects-contract.md
+  - /docs/contracts/12-persistence-log-contract.md
+  - /docs/contracts/13-rest-api-contract.md
+  - /docs/contracts/14-websocket-contract.md
+  - /docs/contracts/15-frontend-state-contract.md
+  - /docs/contracts/16-test-scenarios-contract.md
+
+rules:
+  proposal:
+    - Always mention which /docs/contracts files are mandatory context.
+    - Keep scope narrow and MVP-focused.
+    - Explicitly list non-goals.
+    - Do not allow implementation of postponed features unless the proposal is specifically about that feature.
+    - Do not invent package names, enum values, DTO names or JSON formats.
+
+  specs:
+    - Use Markdown spec files, not YAML.
+    - Use ADDED, MODIFIED or REMOVED Requirements.
+    - Each Requirement must include at least one Scenario.
+    - Scenarios should use Given/When/Then format.
+    - Specs must reference the relevant contracts when behavior, JSON formats, enums or folder structure are involved.
+
+  design:
+    - Explain backend/frontend boundaries.
+    - Explain how the Game Engine remains isolated.
+    - Mention affected packages and folders.
+    - Mention persistence, WebSocket or frontend implications when relevant.
+
+  tasks:
+    - Use checkbox tasks.
+    - Separate backend, frontend, tests and verification tasks.
+    - Include build/test verification steps.
+    - Do not include tasks outside the proposal scope.

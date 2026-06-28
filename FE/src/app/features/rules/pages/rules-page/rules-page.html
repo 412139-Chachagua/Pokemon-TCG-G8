@@ -1,0 +1,53 @@
+<div class="relative min-h-dvh" [style.--rules-bg]="'url(assets/images/pokemon-center.png)'">
+  <app-back-button />
+  <main class="rules-main">
+    <div class="rules-body" [class.sidebar-closed]="!sidebarOpen()">
+      <div class="sidebar-track">
+        <aside class="rules-sidebar">
+          <h2 class="sidebar-title">ÍNDICE</h2>
+          <nav>
+            @for (section of sections; track section.id; let i = $index) {
+              <button
+                class="sidebar-item"
+                [class.active]="i === activeIndex()"
+                (click)="selectSection(i)"
+              >
+                {{ section.title }}
+              </button>
+            }
+          </nav>
+        </aside>
+
+        <button class="sidebar-toggle" (click)="toggleSidebar()">
+          <span class="toggle-icon">{{ sidebarOpen() ? '◀' : '▶' }}</span>
+        </button>
+      </div>
+
+      <section class="rules-content">
+        <h1 class="rules-title">REGLAMENTO OFICIAL - EDICióN XY</h1>
+        <div class="pk-panel">
+          <div class="pk-panel__header">
+<!--            {{ sections[activeIndex()].title }}-->
+            @if (sections[activeIndex()].subsections.length) {
+              <nav class="sub-nav">
+                @for (sub of sections[activeIndex()].subsections; track sub.id; let j = $index) {
+                  <button
+                    class="sub-nav__item"
+                    [class.active]="j === activeSubIndex()"
+                    (click)="scrollToSub(sub.id, j)"
+                  >
+                    {{ sub.title }}
+                  </button>
+                }
+              </nav>
+            }
+          </div>
+          <div #contentBody class="pk-panel__body prose"></div>
+        </div>
+        <footer class="rules-footer">
+          <p>© 2026 Nintendo. Todos los derechos reservados. Pokémon® es una marca registrada de Nintendo.</p>
+        </footer>
+      </section>
+    </div>
+  </main>
+</div>

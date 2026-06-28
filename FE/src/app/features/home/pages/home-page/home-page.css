@@ -1,0 +1,215 @@
+:host {
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  font-family: var(--pk-font, 'Press Start 2P', system-ui, sans-serif);
+  background: var(--pk-bg, #0d001a);
+  color: var(--pk-text, #ffffff);
+}
+
+.home-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.hub {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  animation: hub-in 0.35s ease-out both;
+}
+
+.hub::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--hub-bg, none);
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.2) saturate(0.6);
+  z-index: 0;
+}
+
+@keyframes hub-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hub__layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+  height: 100%;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.hub__left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.hub__right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.hub__right-toolbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.pk-greeting {
+  margin: 0 0 0.25rem;
+  font-size: clamp(0.45rem, 1.2vw, 0.65rem);
+  color: var(--pk-text-dim, #b8a0d0);
+  letter-spacing: 0.08em;
+}
+
+.pk-player-name {
+  margin: 0 0 1rem;
+  font-size: clamp(0.7rem, 2vw, 1.1rem);
+  color: var(--pk-text-bright, #e8d0ff);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 12px rgba(155, 109, 255, 0.4);
+}
+
+.pk-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.hub__footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--pk-dark, #5a2d8a);
+  margin-top: auto;
+}
+
+.pk-logout-btn {
+  background: none;
+  border: 1px solid var(--pk-btn-border, #4a2d70);
+  border-radius: 3px;
+  padding: 0.5rem 0.9rem;
+  color: var(--pk-text-dim, #b8a0d0);
+  font-size: clamp(0.35rem, 0.8vw, 0.45rem);
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.pk-logout-btn:hover {
+  color: var(--pk-error, #ef4444);
+  border-color: var(--pk-error, #ef4444);
+}
+
+.hub__copyright {
+  font-size: clamp(0.3rem, 0.6vw, 0.4rem);
+  color: var(--pk-text-dim, #b8a0d0);
+  line-height: 1.5;
+  text-align: right;
+  white-space: pre-line;
+}
+
+.pk-history-btn,
+.pk-ranking-btn {
+  width: 44px;
+  height: 44px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pk-dark, #5a2d8a);
+  border: 2px solid var(--pk-btn-border, #4a2d70);
+  border-radius: 4px;
+  color: var(--pk-text-dim, #b8a0d0);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.pk-history-btn:hover,
+.pk-ranking-btn:hover {
+  background: var(--pk-btn, #6b4d8a);
+  color: var(--pk-text, #ffffff);
+  border-color: var(--pk-accent, #9b6dff);
+  outline: none;
+}
+
+.pk-history-btn.active,
+.pk-ranking-btn.active {
+  color: var(--pk-accent, #9b6dff);
+  border-color: var(--pk-accent, #9b6dff);
+  box-shadow: 0 0 8px rgba(155, 109, 255, 0.4);
+}
+
+.pk-history-icon,
+.pk-ranking-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pk-panel--ranking {
+  flex: 1;
+}
+
+.pk-ranking-body {
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pk-history-body {
+  max-height: 520px;
+  overflow-y: auto;
+  scrollbar-color: #3B1F6E transparent;
+  scrollbar-width: thin;
+}
+
+.pk-history-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pk-history-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pk-history-body::-webkit-scrollbar-thumb {
+  background: #3B1F6E;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .hub__layout {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .hub__right {
+    order: -1;
+  }
+
+  .hub__footer-row {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hub__copyright {
+    text-align: center;
+  }
+}

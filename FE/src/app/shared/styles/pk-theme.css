@@ -1,0 +1,211 @@
+/* ═══════════════════════════════════════════════════
+   PK DESIGN SYSTEM — Pokémon TCG Retro Theme
+   ═══════════════════════════════════════════════════ */
+
+/* ── Design Tokens ───────────────────────────────── */
+:root {
+  /* Palette */
+  --pk-bg: #3d205a;
+  --pk-surface: #1a0a2e;
+  --pk-panel: #5a3d7a;
+  --pk-accent: #9b6dff;
+  --pk-accent-glow: #7c3aed;
+  --pk-dark: #5a2d8a;
+  --pk-text: #ffffff;
+  --pk-text-dim: #b8a0d0;
+  --pk-text-bright: #e8d0ff;
+  --pk-btn: #6b4d8a;
+  --pk-btn-hover: #7c5c9e;
+  --pk-btn-border: #4a2d70;
+  --pk-error: #ef4444;
+  --pk-error-bg: rgba(239, 68, 68, 0.1);
+  --pk-success: #4ade80;
+  --pk-success-bg: rgba(74, 222, 128, 0.1);
+
+  /* Typography */
+  --pk-font: 'Press Start 2P', system-ui, sans-serif;
+  --pk-fz-xs: clamp(0.3rem, 0.6vw, 0.4rem);
+  --pk-fz-sm: clamp(0.35rem, 0.8vw, 0.45rem);
+  --pk-fz-base: clamp(0.45rem, 1.1vw, 0.6rem);
+  --pk-fz-lg: clamp(0.7rem, 2vw, 1.1rem);
+
+  /* Borders */
+  --pk-radius: 3px;
+  --pk-radius-sm: 2px;
+  --pk-border-w: 2px;
+
+  /* Timing */
+  --pk-t-fast: 0.1s;
+  --pk-t-base: 0.15s;
+}
+
+/* ── Base ────────────────────────────────────────── */
+body {
+  margin: 0;
+  font-family: var(--pk-font);
+  background: var(--pk-bg);
+  color: var(--pk-text);
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+.pk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--pk-btn);
+  border: var(--pk-border-w) solid var(--pk-btn-border);
+  border-radius: var(--pk-radius);
+  color: var(--pk-text);
+  font-family: var(--pk-font);
+  font-size: var(--pk-fz-base);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    background var(--pk-t-base),
+    border-color var(--pk-t-base),
+    transform var(--pk-t-fast);
+}
+
+.pk-btn:hover,
+.pk-btn:focus-visible {
+  background: var(--pk-btn-hover);
+  border-color: var(--pk-accent);
+  transform: translateX(4px);
+  outline: none;
+}
+
+.pk-btn:active {
+  transform: translateX(2px);
+}
+
+.pk-btn--sm {
+  padding: 0.4rem 0.85rem;
+  font-size: var(--pk-fz-sm);
+}
+
+.pk-btn--ghost {
+  background: transparent;
+  border-color: var(--pk-btn-border);
+  color: var(--pk-text-dim);
+}
+
+.pk-btn--ghost:hover {
+  color: var(--pk-text);
+  border-color: var(--pk-accent);
+}
+
+.pk-btn--danger {
+  background: transparent;
+  border-color: var(--pk-error);
+  color: var(--pk-error);
+}
+
+.pk-btn--danger:hover {
+  background: var(--pk-error-bg);
+}
+
+.pk-btn--back {
+  width: auto;
+  display: inline-block;
+}
+
+.pk-btn--back:hover {
+  transform: translateX(-3px);
+}
+
+.pk-accent-btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: var(--pk-accent);
+  border: 2px solid var(--pk-dark);
+  border-radius: var(--pk-radius);
+  color: #ffffff;
+  font-family: var(--pk-font);
+  font-size: var(--pk-fz-sm);
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: background var(--pk-t-base), transform var(--pk-t-fast);
+}
+
+.pk-accent-btn:hover {
+  background: var(--pk-accent-glow);
+  transform: translateY(-1px);
+}
+
+/* ── Panel ───────────────────────────────────────── */
+.pk-panel {
+  background: var(--pk-panel);
+  border: var(--pk-border-w) solid var(--pk-dark);
+  border-radius: var(--pk-radius);
+  padding: 1rem;
+}
+
+.pk-panel__header {
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--pk-dark);
+  margin-bottom: 0.6rem;
+  font-family: var(--pk-font);
+  font-size: var(--pk-fz-sm);
+  color: var(--pk-accent);
+  letter-spacing: 0.08em;
+}
+
+.pk-panel__body {
+  font-family: var(--pk-font);
+  font-size: var(--pk-fz-base);
+  color: var(--pk-text-dim);
+}
+
+/* ── Typography Utilities ────────────────────────── */
+.pk-text-dim {
+  color: var(--pk-text-dim);
+}
+
+.pk-text-bright {
+  color: var(--pk-text-bright);
+}
+
+.pk-text-accent {
+  color: var(--pk-accent);
+}
+
+/* ── Skeleton ────────────────────────────────────── */
+.pk-skeleton {
+  display: inline-block;
+  width: 180px;
+  height: 0.7rem;
+  border-radius: var(--pk-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--pk-dark) 25%,
+    var(--pk-btn) 50%,
+    var(--pk-dark) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-slide {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Key Blink ───────────────────────────────────── */
+@keyframes key-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* ── Fade In ─────────────────────────────────────── */
+@keyframes pk-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Reduced Motion ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pk-skeleton { animation: none; }
+}

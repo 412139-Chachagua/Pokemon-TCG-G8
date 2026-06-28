@@ -1,0 +1,92 @@
+<div class="relative min-h-dvh">
+  <button class="pk-btn pk-btn--back absolute left-4 top-6" routerLink="/">← VOLVER</button>
+  <div class="min-h-dvh bg-[var(--pk-bg)] p-8 flex items-center justify-center">
+    <div class="w-full max-w-md">
+      <div class="bg-[var(--pk-btn)] border border-[var(--pk-btn-border)] rounded-md p-6">
+        <h1 class="text-center text-[var(--pk-text)] text-[length:var(--pk-fz-lg)] mb-6">INICIAR SESIÓN</h1>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+          <div>
+            <label for="email" class="block text-[var(--pk-text-dim)] text-[length:var(--pk-fz-sm)] mb-1">Email</label>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="email@ejemplo.com"
+              class="w-full rounded-md border border-[var(--pk-btn-border)] bg-[var(--pk-surface)] px-3 py-2 text-[length:var(--pk-fz-base)] text-[var(--pk-text)] placeholder-[var(--pk-text-dim)] focus:border-[var(--pk-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--pk-accent)]"
+              [class.border-[var(--pk-error)]]="form.get('email')?.invalid && form.get('email')?.touched"
+            />
+            @if (form.get('email')?.invalid && form.get('email')?.touched) {
+              <p class="mt-1 text-[var(--pk-error)] text-[length:var(--pk-fz-xs)]">
+                @if (form.get('email')?.errors?.['required']) {
+                  El email es requerido
+                } @else if (form.get('email')?.errors?.['email']) {
+                  Ingresá un email válido
+                }
+              </p>
+            }
+          </div>
+
+          <div>
+            <label for="password" class="block text-[var(--pk-text-dim)] text-[length:var(--pk-fz-sm)] mb-1">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              placeholder="••••••"
+              class="w-full rounded-md border border-[var(--pk-btn-border)] bg-[var(--pk-surface)] px-3 py-2 text-[length:var(--pk-fz-base)] text-[var(--pk-text)] placeholder-[var(--pk-text-dim)] focus:border-[var(--pk-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--pk-accent)]"
+              [class.border-[var(--pk-error)]]="form.get('password')?.invalid && form.get('password')?.touched"
+            />
+            @if (form.get('password')?.invalid && form.get('password')?.touched) {
+              <p class="mt-1 text-[var(--pk-error)] text-[length:var(--pk-fz-xs)]">
+                @if (form.get('password')?.errors?.['required']) {
+                  La contraseña es requerida
+                } @else if (form.get('password')?.errors?.['minlength']) {
+                  La contraseña debe tener al menos 6 caracteres
+                }
+              </p>
+            }
+          </div>
+
+        @if (errorMessage()) {
+          <div class="border border-[var(--pk-error)] rounded-md p-3" style="background: var(--pk-error-bg)">
+            <p class="text-[var(--pk-error)] text-[length:var(--pk-fz-sm)]">{{ errorMessage() }}</p>
+          </div>
+        }
+
+        @if (deactivatedUserId()) {
+          <button
+            type="button"
+            (click)="onReactivate()"
+            [disabled]="reactivateLoading()"
+            class="pk-btn w-full justify-center"
+            style="border-color: var(--pk-accent); color: var(--pk-accent)"
+          >
+            @if (reactivateLoading()) {
+              Reactivando...
+            } @else {
+              Reactivar cuenta
+            }
+          </button>
+        }
+
+        <button
+          type="submit"
+          [disabled]="loading()"
+          class="pk-btn w-full justify-center"
+        >
+          @if (loading()) {
+            Ingresando...
+          } @else {
+            Ingresar
+          }
+        </button>
+      </form>
+
+      <p class="mt-6 text-center text-[var(--pk-text-dim)] text-[length:var(--pk-fz-sm)]">
+        ¿No tenés cuenta?
+        <a routerLink="/auth/register" class="text-[var(--pk-accent)] hover:text-[var(--pk-accent-glow)]">Registrate</a>
+      </p>
+    </div>
+  </div>
+</div>

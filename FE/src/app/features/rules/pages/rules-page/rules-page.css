@@ -1,0 +1,424 @@
+:host {
+  animation: pk-fade-in 0.35s ease-out both;
+}
+
+.rules-main {
+  min-height: 100dvh;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
+    var(--rules-bg);
+  background-size: cover;
+  background-position: center 35%;
+  background-attachment: fixed;
+  padding: 2rem;
+}
+
+.rules-title {
+  text-align: center;
+  margin: 0 0 1.5rem;
+  font-size: var(--pk-fz-lg);
+  color: var(--pk-text);
+}
+
+  .rules-body {
+  --pk-fz-rules: clamp(0.4rem, 0.92vw, 0.52rem);
+  display: flex;
+  align-items: flex-start;
+  gap: 2.5rem;
+}
+
+/* ── Sidebar track (sticky wrapper) ── */
+.sidebar-track {
+  display: flex;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  margin-top: calc(1.1rem + 1.5rem + 0.5rem);
+}
+
+/* ── Sidebar ── */
+.rules-sidebar {
+  width: 250px;
+  min-width: 250px;
+  max-height: calc(100dvh - 9rem);
+  overflow-y: auto;
+  background: var(--pk-panel);
+  border: 1px solid var(--pk-btn-border);
+  border-right: none;
+  border-radius: var(--pk-radius) 0 0 var(--pk-radius);
+  padding: 1rem;
+  transition:
+    width 0.3s ease,
+    min-width 0.3s ease,
+    opacity 0.3s ease,
+    padding 0.3s ease,
+    border 0.3s ease;
+}
+
+  .sidebar-closed .rules-sidebar {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border: none;
+}
+
+.sidebar-title {
+  margin: 0 0 1rem;
+  font-size: var(--pk-fz-base);
+  color: var(--pk-text-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.sidebar-item {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.25rem;
+  background: none;
+  border: none;
+  border-radius: var(--pk-radius);
+  color: var(--pk-text-dim);
+  font-family: var(--pk-font);
+  font-size: var(--pk-fz-rules);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-item:hover {
+  color: var(--pk-text);
+  background: var(--pk-surface);
+}
+
+.sidebar-item.active {
+  color: var(--pk-accent);
+  background: var(--pk-surface);
+}
+
+/* ── Toggle button ── */
+.sidebar-toggle {
+  position: absolute;
+  left: 250px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 24px;
+  height: calc(100dvh - 9rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pk-panel);
+  border: 1px solid var(--pk-btn-border);
+  border-left: none;
+  border-radius: 0 var(--pk-radius) var(--pk-radius) 0;
+  color: var(--pk-text-dim);
+  cursor: pointer;
+  transition:
+    left 0.3s ease,
+    color 0.15s,
+    background 0.15s;
+  padding: 0;
+}
+
+.sidebar-toggle:hover {
+  color: var(--pk-accent);
+  background: var(--pk-surface);
+}
+
+.sidebar-closed .sidebar-toggle {
+  top: 0;
+  left: 0.5rem;
+  height: 48px;
+  transform: none;
+  border: 1px solid var(--pk-btn-border);
+  border-radius: var(--pk-radius);
+}
+
+.toggle-icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* ── Content ── */
+.rules-content {
+  flex: 1;
+  min-width: 0;
+  transition: all 0.3s ease;
+}
+
+.rules-content .pk-panel {
+  padding-top: 0.5rem;
+}
+
+.rules-content .pk-panel__header {
+  font-size: var(--pk-fz-rules);
+  padding-bottom: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+
+/* ── Sub‑nav (h3 items) ── */
+.sub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--pk-dark);
+}
+
+.sub-nav__item {
+  font-family: var(--pk-font);
+  font-size: var(--pk-fz-sm);
+  color: var(--pk-text-dim);
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-dark);
+  border-radius: var(--pk-radius);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sub-nav__item:hover {
+  color: var(--pk-text);
+  background: var(--pk-panel);
+  border-color: var(--pk-accent);
+}
+
+.sub-nav__item.active {
+  color: var(--pk-accent);
+  background: var(--pk-panel);
+  border-color: var(--pk-accent);
+}
+
+/* ── Prose (markdown rendered) ── */
+.prose {
+  font-size: var(--pk-fz-base);
+  line-height: 1.8;
+  color: var(--pk-text-dim);
+  padding-top: 1px;
+}
+
+.prose h2 {
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  color: var(--pk-text-bright);
+  margin: 2.5rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--pk-dark);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.prose ::ng-deep h3 {
+  font-size: clamp(0.55rem, 1.2vw, 0.7rem);
+  color: var(--pk-accent);
+  margin: 2rem 0 0.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  scroll-margin-top: 5rem;
+}
+
+.prose p {
+  margin: 0 0 0.75rem;
+  line-height: 1.8;
+}
+
+.prose strong {
+  font-weight: normal;
+  color: var(--pk-text);
+}
+
+.prose em {
+  color: var(--pk-text);
+  font-style: italic;
+}
+
+.prose a {
+  color: var(--pk-accent);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.prose a:hover {
+  color: var(--pk-accent-glow);
+  text-decoration: underline;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0.75rem 0 1rem;
+  padding-left: 2rem;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+
+.prose li::marker {
+  color: var(--pk-accent);
+}
+
+/* ── Table scroll wrapper (innerHTML, need ::ng-deep) ── */
+.prose ::ng-deep .table-scroll {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.prose ::ng-deep .table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--pk-fz-sm);
+}
+
+.prose ::ng-deep .table-scroll th,
+.prose ::ng-deep .table-scroll td {
+  border: 1px solid var(--pk-btn-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose ::ng-deep .table-scroll th {
+  background: var(--pk-panel);
+  color: var(--pk-text);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.prose ::ng-deep .table-scroll td {
+  color: var(--pk-text-dim);
+}
+
+.prose ::ng-deep .table-scroll tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── Blockquotes ── */
+.prose blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--pk-accent);
+  background: var(--pk-surface);
+  border-radius: 0 var(--pk-radius) var(--pk-radius) 0;
+  font-size: var(--pk-fz-sm);
+  line-height: 1.6;
+}
+
+.prose blockquote p {
+  margin: 0 0 0.35rem;
+}
+
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.prose blockquote strong {
+  color: var(--pk-text-bright);
+}
+
+/* ── HR ── */
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--pk-dark);
+  margin: 1.5rem 0;
+}
+
+/* ── Code / inline ── */
+.prose code {
+  background: var(--pk-surface);
+  color: var(--pk-accent);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--pk-radius-sm);
+  font-size: 0.85em;
+}
+
+/* ── Scrollbar sidebar ── */
+.rules-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.rules-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rules-sidebar::-webkit-scrollbar-thumb {
+  background: var(--pk-dark);
+  border-radius: 2px;
+}
+
+/* ── Footer ── */
+.rules-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--pk-dark);
+}
+
+.rules-footer p {
+  font-size: var(--pk-fz-xs);
+  color: var(--pk-text-dim);
+  opacity: 0.7;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+.rules-body {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .rules-sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: none;
+    position: static;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--pk-btn-border);
+    border-radius: var(--pk-radius);
+  }
+
+.sidebar-closed .rules-sidebar {
+    width: 100%;
+    min-width: 100%;
+    padding: 1rem;
+    opacity: 1;
+    pointer-events: auto;
+    border: 1px solid var(--pk-btn-border);
+    margin-top: 0;
+  }
+
+  .sidebar-track {
+    margin-top: 0;
+  }
+
+  .rules-sidebar {
+    margin-top: 0;
+  }
+
+  .sidebar-toggle {
+    display: none;
+  }
+
+  .sidebar-title {
+    white-space: normal;
+  }
+}

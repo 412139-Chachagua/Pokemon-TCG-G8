@@ -1,0 +1,395 @@
+<div class="profile-page">
+  <div class="profile-header">
+    <app-back-button (beforeBack)="goBack()" />
+    <h1 class="m-0 mb-4 pt-[15px] text-lg text-[var(--pk-text)]">MI PERFIL</h1>
+  </div>
+
+  @if (!editMode()) {
+    <div class="profile-view">
+      <div class="profile-card">
+
+        <div class="card-section card-identity">
+          <div class="card-section-header">
+            <span>&#10022; PERFIL DEL ENTRENADOR &#10022;</span>
+          </div>
+          <div class="identity-body">
+            <div class="avatar-container">
+              @if (avatarUrl() && !avatarLoadError()) {
+                <img class="avatar-image" [src]="avatarUrl()" [alt]="player()?.displayName" (error)="onAvatarError()" />
+              } @else {
+                <div class="avatar-placeholder">
+                  <span>{{ avatarInitials() }}</span>
+                </div>
+              }
+            </div>
+            <button class="pk-link-btn" (click)="openAvatarPicker()">Cambiar avatar</button>
+            <p class="profile-name">{{ player()?.displayName ?? 'Entrenador' }}</p>
+            <p class="profile-id">N.º ID / {{ trainerId() }}</p>
+            <p class="profile-email">{{ user()?.email ?? 'N/A' }}</p>
+          </div>
+        </div>
+
+        <div class="card-section card-metrics">
+          <div class="metrics-grid">
+            <div class="metric-block">
+              <span class="metric-value">
+                @if (rankingError()) {
+                  N/C
+                } @else if (playerRank() !== null) {
+                  #{{ playerRank() }}
+                } @else {
+                  N/C
+                }
+              </span>
+              <span class="metric-label">Ranking</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-value">
+                @if (statsError()) {
+                  N/A
+                } @else {
+                  {{ stats()?.totalWins ?? 0 }}
+                }
+              </span>
+              <span class="metric-label">Victorias</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-value">
+                @if (statsError()) {
+                  N/A
+                } @else {
+                  {{ stats()?.totalLosses ?? 0 }}
+                }
+              </span>
+              <span class="metric-label">Derrotas</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-value">
+                @if (statsError()) {
+                  N/A
+                } @else if (winRate() !== null) {
+                  {{ winRate() }}%
+                } @else {
+                  N/A
+                }
+              </span>
+              <span class="metric-label">Win Rate</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-value">
+                @if (statsError()) {
+                  N/A
+                } @else {
+                  {{ stats()?.currentWinStreak ?? 0 }}
+                }
+              </span>
+              <span class="metric-label">Racha</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-value">
+                @if (statsError()) {
+                  N/A
+                } @else {
+                  {{ stats()?.maxWinStreak ?? 0 }}
+                }
+              </span>
+              <span class="metric-label">Max Racha</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section card-secondary">
+          <div class="secondary-item">
+            <span class="secondary-label">Tiempo Jugado</span>
+            <span class="secondary-value">{{ playtime() }}</span>
+          </div>
+          <div class="secondary-separator"></div>
+          <div class="secondary-item">
+            <span class="secondary-label">Comienzo</span>
+            <span class="secondary-value">{{ startDate() }}</span>
+          </div>
+          <div class="secondary-separator"></div>
+          <div class="secondary-item">
+            <span class="secondary-label">Mazos</span>
+            <span class="secondary-value">
+              @if (deckCountError()) {
+                N/A
+              } @else {
+                {{ deckCount() }}
+              }
+            </span>
+          </div>
+        </div>
+
+        <div class="card-section card-audio">
+          <div class="card-section-header">
+            <span>&#10022; CONFIGURACIÓN DE AUDIO &#10022;</span>
+          </div>
+          <div class="audio-control">
+            <label class="field-label">MENU</label>
+            <div class="audio-row">
+              <input
+                type="range"
+                class="audio-slider"
+                min="0"
+                max="100"
+                [value]="audioService.generalVolume()"
+                (input)="onMenuVolumeChange($event)"
+              />
+              <span class="audio-value">{{ audioService.generalVolume() }}%</span>
+            </div>
+          </div>
+          <div class="audio-control">
+            <label class="field-label">TABLERO</label>
+            <div class="audio-row">
+              <input
+                type="range"
+                class="audio-slider"
+                min="0"
+                max="100"
+                [value]="audioService.boardVolume()"
+                (input)="onBoardVolumeChange($event)"
+              />
+              <span class="audio-value">{{ audioService.boardVolume() }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section card-actions">
+          <button class="pk-accent-btn" (click)="enterEditMode()">EDITAR PERFIL</button>
+        </div>
+
+      </div>
+    </div>
+  } @else {
+    <div class="profile-edit">
+      <div class="profile-card">
+
+        <div class="card-section card-identity">
+          <div class="card-section-header">
+            <span>&#10022; EDITAR PERFIL &#10022;</span>
+          </div>
+        </div>
+
+        <div class="card-section card-form">
+          <div class="profile-field">
+            <label class="field-label" for="displayName">Nombre de entrenador</label>
+            <input
+              id="displayName"
+              type="text"
+              [formControl]="displayNameControl"
+              class="pk-input"
+              [class.pk-input--error]="displayNameControl.invalid && displayNameControl.touched"
+            />
+            @if (displayNameControl.invalid && displayNameControl.touched) {
+              <p class="field-error">
+                @if (displayNameControl.errors?.['required']) {
+                  El nombre es requerido
+                } @else if (displayNameControl.errors?.['minlength']) {
+                  El nombre debe tener al menos 2 caracteres
+                } @else if (displayNameControl.errors?.['maxlength']) {
+                  El nombre no puede tener más de 30 caracteres
+                }
+              </p>
+            }
+          </div>
+
+          <div class="profile-field">
+            <label class="field-label" for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              [formControl]="emailControl"
+              class="pk-input"
+              [class.pk-input--error]="emailControl.invalid && emailControl.touched"
+            />
+            @if (emailControl.invalid && emailControl.touched) {
+              <p class="field-error">
+                @if (emailControl.errors?.['required']) {
+                  El email es requerido
+                } @else if (emailControl.errors?.['email']) {
+                  Ingresá un email válido
+                }
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="card-section">
+            <div class="profile-error">
+              <p>{{ errorMessage() }}</p>
+            </div>
+          </div>
+        }
+
+        <div class="card-section card-actions">
+          <div class="profile-buttons">
+            <button
+              class="pk-accent-btn"
+              (click)="onSave()"
+              [disabled]="loading()"
+            >
+              @if (loading()) {
+                Guardando...
+              } @else {
+                GUARDAR
+              }
+            </button>
+            <button class="pk-btn" (click)="exitEditMode()">CANCELAR</button>
+          </div>
+
+          <div class="profile-divider"></div>
+
+          <button class="pk-link-btn pk-link-btn--warning" (click)="openPasswordModal()">
+            Cambiar contraseña
+          </button>
+
+          <div class="profile-divider"></div>
+
+          <button class="pk-link-btn pk-link-btn--danger" (click)="openDeleteModal()">
+            Eliminar cuenta
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+</div>
+
+@if (showPasswordModal()) {
+  <div class="modal-overlay" (click)="closePasswordModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2 class="modal-title">Cambiar contraseña</h2>
+
+      <form [formGroup]="passwordForm" class="modal-form">
+        <div class="profile-field">
+          <label class="field-label" for="currentPassword">Contraseña actual</label>
+          <input
+            id="currentPassword"
+            type="password"
+            formControlName="currentPassword"
+            class="pk-input"
+            [class.pk-input--error]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"
+          />
+          @if (passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched) {
+            <p class="field-error">La contraseña actual es requerida</p>
+          }
+        </div>
+
+        <div class="profile-field">
+          <label class="field-label" for="newPassword">Nueva contraseña</label>
+          <input
+            id="newPassword"
+            type="password"
+            formControlName="newPassword"
+            class="pk-input"
+            [class.pk-input--error]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"
+          />
+          @if (passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched) {
+            <p class="field-error">
+              @if (passwordForm.get('newPassword')?.errors?.['required']) {
+                La nueva contraseña es requerida
+              } @else if (passwordForm.get('newPassword')?.errors?.['minlength']) {
+                La contraseña debe tener al menos 6 caracteres
+              }
+            </p>
+          }
+        </div>
+
+        <div class="profile-field">
+          <label class="field-label" for="confirmPassword">Confirmar nueva contraseña</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            formControlName="confirmPassword"
+            class="pk-input"
+            [class.pk-input--error]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched"
+          />
+          @if (passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched) {
+            <p class="field-error">Confirmá tu nueva contraseña</p>
+          }
+        </div>
+
+        @if (passwordError()) {
+          <div class="profile-error">
+            <p>{{ passwordError() }}</p>
+          </div>
+        }
+      </form>
+
+      <div class="modal-buttons">
+        <button
+          class="pk-accent-btn"
+          (click)="onChangePassword()"
+          [disabled]="passwordLoading()"
+        >
+          @if (passwordLoading()) {
+            Guardando...
+          } @else {
+            Guardar contraseña
+          }
+        </button>
+        <button class="pk-btn" (click)="closePasswordModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDeleteModal()) {
+  <div class="modal-overlay" (click)="closeDeleteModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2 class="modal-title">Eliminar cuenta</h2>
+      <p class="modal-description">
+        Esta acción es irreversible. Ingresá tu contraseña para confirmar.
+      </p>
+
+      <form [formGroup]="deleteForm" class="modal-form">
+        <div class="profile-field">
+          <label class="field-label" for="deletePassword">Contraseña actual</label>
+          <input
+            id="deletePassword"
+            type="password"
+            formControlName="password"
+            class="pk-input"
+            [class.pk-input--error]="deleteForm.get('password')?.invalid && deleteForm.get('password')?.touched"
+          />
+          @if (deleteForm.get('password')?.invalid && deleteForm.get('password')?.touched) {
+            <p class="field-error">La contraseña es requerida</p>
+          }
+        </div>
+
+        @if (deleteError()) {
+          <div class="profile-error">
+            <p>{{ deleteError() }}</p>
+          </div>
+        }
+      </form>
+
+      <div class="modal-buttons">
+        <button
+          class="pk-accent-btn pk-accent-btn--danger"
+          (click)="onDeleteAccount()"
+          [disabled]="deleteLoading()"
+        >
+          @if (deleteLoading()) {
+            Eliminando...
+          } @else {
+            Eliminar cuenta
+          }
+        </button>
+        <button class="pk-btn" (click)="closeDeleteModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showAvatarPicker()) {
+  <app-avatar-picker-dialog
+    [playerId]="playerId()!"
+    [avatarUrl]="avatarUrl()"
+    [displayName]="player()?.displayName ?? ''"
+    (confirmed)="onAvatarUploaded()"
+    (cancelled)="closeAvatarPicker()"
+  />
+}

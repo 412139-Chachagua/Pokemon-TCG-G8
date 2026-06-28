@@ -1,0 +1,66 @@
+<div class="home-page">
+  <div class="hub" [style.--hub-bg]="'url(assets/images/state-' + timeOfDay() + '.png)'">
+    <div class="hub__layout">
+      <div class="hub__left">
+        <div class="pk-panel">
+          <p class="pk-greeting">{{ greeting() }},</p>
+          <p class="pk-player-name">{{ displayName() }}</p>
+          <button class="pk-accent-btn" (click)="openProfile()">MI PERFIL</button>
+        </div>
+
+        <div class="pk-actions">
+          @for (card of menuCards(); track card.route) {
+            <button
+              class="pk-btn"
+              (click)="navigate(card.route)"
+              [attr.aria-label]="card.label"
+            >
+              {{ card.label }}
+            </button>
+          }
+        </div>
+
+        <div class="hub__footer-row">
+          <button class="pk-logout-btn" (click)="logout()">Cerrar sesión</button>
+          <span class="hub__copyright">© 2026 Nintendo. Todos los derechos reservados.
+Pokémon® es una marca registrada de Nintendo.</span>
+        </div>
+      </div>
+
+      <div class="hub__right">
+        <div class="hub__right-toolbar">
+          <button
+            class="pk-history-btn"
+            [class.active]="historyVisible()"
+            (click)="toggleHistory()"
+            aria-label="Historial"
+          >
+            <img src="assets/icons/history-doc.svg" alt="Historial" class="pk-history-icon" />
+          </button>
+          <button
+            class="pk-ranking-btn"
+            [class.active]="rankingVisible()"
+            (click)="toggleRanking()"
+            aria-label="Ranking"
+          >
+            <img src="assets/icons/web-globe.svg" alt="Ranking" class="pk-ranking-icon" />
+          </button>
+        </div>
+        @if (historyVisible()) {
+          <div class="pk-panel pk-panel--ranking">
+            <div class="pk-ranking-body pk-history-body">
+              <app-history-page />
+            </div>
+          </div>
+        }
+        @if (rankingVisible()) {
+          <div class="pk-panel pk-panel--ranking">
+            <div class="pk-ranking-body pk-history-body">
+              <app-ranking-page />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

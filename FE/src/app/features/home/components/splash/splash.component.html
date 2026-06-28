@@ -1,0 +1,34 @@
+<div
+  class="splash"
+  [class.is-transitioning]="transitioning()"
+  [style.--bg-image]="'url(' + bgImage() + ')'"
+>
+  <div class="splash__bg" aria-hidden="true">
+    <div class="splash__scanlines"></div>
+  </div>
+
+  <div class="splash__content">
+    <div class="splash__logo-wrap" aria-label="Pokemon">
+      <img
+        class="splash__logo"
+        src="assets/images/pokemon-tcg.svg"
+        alt="Pokemon"
+      />
+      <div class="splash__logo-shine" aria-hidden="true"></div>
+    </div>
+    <img
+      class="splash__xy"
+      src="assets/images/xy-symbols.png"
+      alt=""
+      aria-hidden="true"
+    />
+    <p class="splash__version">{{ gameVersion() }}</p>
+    <p class="splash__press-key" aria-live="polite">
+      PRESIONA CUALQUIER TECLA
+    </p>
+  </div>
+
+  <footer class="splash__footer">{{ footerText() }}</footer>
+
+  <div class="transition-flash" aria-hidden="true"></div>
+</div>
