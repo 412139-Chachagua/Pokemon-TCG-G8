@@ -7,6 +7,8 @@ import ar.edu.utn.frc.tup.piii.engine.GameEngine;
 import ar.edu.utn.frc.tup.piii.engine.MatchStatus;
 import ar.edu.utn.frc.tup.piii.engine.model.GameState;
 import ar.edu.utn.frc.tup.piii.engine.model.PlayerState;
+import ar.edu.utn.frc.tup.piii.engine.turn.TurnPhase;
+import ar.edu.utn.frc.tup.piii.engine.victory.FinishReason;
 import ar.edu.utn.frc.tup.piii.repositories.entities.*;
 import ar.edu.utn.frc.tup.piii.repositories.jpa.*;
 import ar.edu.utn.frc.tup.piii.services.decks.DeckService;
@@ -30,35 +32,26 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Import(MulliganIntegrationTest.MockConfig.class)
+@Import(VictoryIntegrationTest.MockConfig.class)
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {
         "/seed/clean.sql",
         "/seed/cards-seed-data.sql"
 })
-class MulliganIntegrationTest {
+class VictoryIntegrationTest {
 
     @TestConfiguration
     static class MockConfig {
         @Bean @Primary
-        PokemonTcgApiClient pokemonTcgApiClient() {
-            return Mockito.mock(PokemonTcgApiClient.class);
-        }
+        PokemonTcgApiClient pokemonTcgApiClient() { return Mockito.mock(PokemonTcgApiClient.class); }
         @Bean @Primary
-        SimpMessagingTemplate simpMessagingTemplate() {
-            return Mockito.mock(SimpMessagingTemplate.class);
-        }
+        SimpMessagingTemplate simpMessagingTemplate() { return Mockito.mock(SimpMessagingTemplate.class); }
     }
 
-    @Autowired
-    private MatchApplicationService matchService;
-    @Autowired
-    private GameEngine gameEngine;
-    @Autowired
-    private PlayerJpaRepository playerRepo;
-    @Autowired
-    private UserJpaRepository userRepo;
-    @Autowired
-    private DeckService deckService;
+    @Autowired private MatchApplicationService matchService;
+    @Autowired private GameEngine gameEngine;
+    @Autowired private PlayerJpaRepository playerRepo;
+    @Autowired private UserJpaRepository userRepo;
+    @Autowired private DeckService deckService;
 
     private UUID player1Id;
     private UUID player2Id;
@@ -69,27 +62,25 @@ class MulliganIntegrationTest {
     void setUp() {
         userRepo.deleteAll();
         playerRepo.deleteAll();
-
         player1Id = createTestPlayer("p1@test.com", "Player One");
         player2Id = createTestPlayer("p2@test.com", "Player Two");
 
-        // P1: deck with 4 Basic + 56 energy → ~60% chance of mulligan per draw
-        deck1Id = createTestDeck(player1Id, "Low-Basic Deck",
+        // P1: Pikachu-EX (50 damage, 1 Lightning) can 1-shot anything 50HP or less
+        deck1Id = createTestDeck(player1Id, "P1 EX Deck",
                 List.of(
-                        new CreateDeckRequest.DeckCardRequest("seed-charmander", 4),
-                        new CreateDeckRequest.DeckCardRequest("seed-fire-energy", 56)
+                        new CreateDeckRequest.DeckCardRequest("seed-pikachu-ex", 4),
+                        new CreateDeckRequest.DeckCardRequest("seed-lightning-energy", 56)
                 ));
-        // P2: deck with 8 basics (4 each, 2 types) + 52 energy
-        deck2Id = createTestDeck(player2Id, "Normal Deck",
+        // P2: only Charmander (50 HP) so P1 can KO it; energy type irrelevant
+        deck2Id = createTestDeck(player2Id, "P2 Fragile Deck",
                 List.of(
                         new CreateDeckRequest.DeckCardRequest("seed-charmander", 4),
-                        new CreateDeckRequest.DeckCardRequest("seed-squirtle", 4),
-                        new CreateDeckRequest.DeckCardRequest("seed-fire-energy", 52)
+                        new CreateDeckRequest.DeckCardRequest("seed-water-energy", 56)
                 ));
     }
 
     @Test
-    void shouldResolveMultipleMulligans() {
+    void shouldWinByKnockout() {
         CreateMatchRequest createReq = new CreateMatchRequest();
         createReq.setPlayer1Id(player1Id.toString());
         createReq.setPlayer1Name("Player One");
@@ -104,8 +95,8 @@ class MulliganIntegrationTest {
         assertEquals("SETUP", match.status());
 
         GameState state = gameEngine.loadState(matchId);
+        assertNotNull(state);
 
-        // Use the shared mulligan resolution logic from the test helpers
         resolveMulliganIfNeeded(state, player1Id);
         resolveMulliganIfNeeded(state, player2Id);
 
@@ -119,35 +110,84 @@ class MulliganIntegrationTest {
         }
 
         state = gameEngine.loadState(matchId);
-        PlayerState p1 = findPlayer(state, player1Id);
-        PlayerState p2 = findPlayer(state, player2Id);
+        PlayerState setupP1 = findPlayer(state, player1Id);
+        PlayerState setupP2 = findPlayer(state, player2Id);
 
-        assertFalse(p1.getHand().isEmpty());
-        assertFalse(p2.getHand().isEmpty());
-
-        UUID p1BasicId = findFirstBasicInstance(p1);
-        assertNotNull(p1BasicId, "P1 should have a basic Pokemon after mulligan resolution");
-
+        UUID p1BasicId = findFirstBasicInstance(setupP1);
+        assertNotNull(p1BasicId, "P1 should have a basic Pokemon");
         GameActionResponse resp = executeAction(matchId, "SETUP_PLACE_ACTIVE", player1Id,
                 Map.of("cardInstanceId", p1BasicId.toString()));
         assertTrue(resp.success(), "P1 place active: " + errorMsg(resp));
-
         resp = executeAction(matchId, "CONFIRM_SETUP", player1Id, Map.of());
         assertTrue(resp.success(), "P1 confirm: " + errorMsg(resp));
 
-        UUID p2BasicId = findFirstBasicInstance(p2);
+        UUID p2BasicId = findFirstBasicInstance(setupP2);
         assertNotNull(p2BasicId, "P2 should have a basic Pokemon");
-
         resp = executeAction(matchId, "SETUP_PLACE_ACTIVE", player2Id,
                 Map.of("cardInstanceId", p2BasicId.toString()));
         assertTrue(resp.success(), "P2 place active: " + errorMsg(resp));
-
         resp = executeAction(matchId, "CONFIRM_SETUP", player2Id, Map.of());
         assertTrue(resp.success(), "P2 confirm: " + errorMsg(resp));
 
         state = gameEngine.loadState(matchId);
-        assertEquals(MatchStatus.ACTIVE, state.getStatus(),
-                "Game should be ACTIVE after both confirm setup");
+        assertEquals(MatchStatus.ACTIVE, state.getStatus());
+
+        // Play turns until P1 delivers the knockout attack
+        boolean p1HasAttachedEnergy = false;
+        int safety = 20;
+        boolean attackDelivered = false;
+
+        while (!attackDelivered && safety-- > 0) {
+            state = gameEngine.loadState(matchId);
+            UUID currentP = state.getCurrentPlayerId();
+
+            if (state.getPhase() == TurnPhase.DRAW) {
+                boolean skipDraw = state.getFirstPlayerId().equals(currentP)
+                        && state.getTurnNumber() == 1
+                        && !state.hasPlayerCompletedFirstTurn(currentP);
+                if (!skipDraw) {
+                    resp = executeAction(matchId, "DRAW_CARD", currentP, Map.of());
+                    assertTrue(resp.success(), "Draw: " + errorMsg(resp));
+                    state = gameEngine.loadState(matchId);
+                }
+            }
+
+            if (state.getPhase() == TurnPhase.MAIN) {
+                if (currentP.equals(player1Id)) {
+                    if (!p1HasAttachedEnergy) {
+                        int energyIdx = findFirstEnergyHandIndex(state, player1Id);
+                        if (energyIdx >= 0) {
+                            resp = executeAction(matchId, "ATTACH_ENERGY", player1Id,
+                                    Map.of("handIndex", energyIdx,
+                                            "targetPokemonInstanceId", getActiveInstanceId(state, player1Id).toString()));
+                            assertTrue(resp.success(), "P1 attach energy: " + errorMsg(resp));
+                            p1HasAttachedEnergy = true;
+                        }
+                    }
+                    if (p1HasAttachedEnergy && state.hasPlayerCompletedFirstTurn(player1Id)) {
+                        UUID opponentActiveId = getActiveInstanceId(state, player2Id);
+                        resp = executeAction(matchId, "DECLARE_ATTACK", player1Id,
+                                Map.of("attackIndex", 0, "targetPokemonInstanceId", opponentActiveId.toString()));
+                        if (resp.success()) {
+                            attackDelivered = true;
+                            break;
+                        }
+                    }
+                }
+                resp = executeAction(matchId, "END_TURN", currentP, Map.of());
+                assertTrue(resp.success(), "End turn: " + errorMsg(resp));
+            }
+        }
+
+        assertTrue(attackDelivered, "P1 should have delivered an attack");
+
+        state = gameEngine.loadState(matchId);
+        assertEquals(MatchStatus.FINISHED, state.getStatus(), "Match should be finished");
+        assertEquals(player1Id, state.getWinnerPlayerId(), "P1 should be the winner");
+
+        boolean validFinish = state.getFinishReason() == FinishReason.KNOCKOUT
+                || state.getFinishReason() == FinishReason.PRIZES;
+        assertTrue(validFinish, "Finish reason should be KNOCKOUT or PRIZES, got: " + state.getFinishReason());
     }
 
     private UUID createTestPlayer(String email, String displayName) {
@@ -189,6 +229,10 @@ class MulliganIntegrationTest {
         throw new AssertionError("Player not found: " + playerId);
     }
 
+    private UUID getActiveInstanceId(GameState state, UUID playerId) {
+        return findPlayer(state, playerId).getActivePokemon().getInstanceId();
+    }
+
     private UUID findFirstBasicInstance(PlayerState player) {
         var basicCardIds = List.of("seed-pikachu", "seed-pikachu-ex", "seed-charmander", "seed-squirtle");
         return player.getHand().stream()
@@ -209,5 +253,16 @@ class MulliganIntegrationTest {
         if (state.isMulliganDrawPending() && state.hasPendingMulliganDraw(playerId)) {
             executeAction(matchId, "RESOLVE_MULLIGAN_DRAW", playerId, Map.of("drawCards", true));
         }
+    }
+
+    private int findFirstEnergyHandIndex(GameState state, UUID playerId) {
+        PlayerState player = findPlayer(state, playerId);
+        for (int i = 0; i < player.getHand().size(); i++) {
+            String cid = player.getHand().get(i).getCardDefinitionId();
+            if (cid != null && cid.toLowerCase().contains("energy")) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
