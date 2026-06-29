@@ -22,136 +22,335 @@ usuario fluida e interactiva, integrando lógica de negocio con una interfaz cla
 Este desafío propone una experiencia completa que combina estrategia, diseño y programación, permitiendo aplicar los
 conocimientos adquiridos en un entorno práctico y motivador.
 
-
 <p align="center"> <img src="./BE/docs/assets/images/UTN-FRC_logo.png" alt="UTN - FRC"/> </p>
 
 <p align="center"> <img src="./BE/docs/assets/images/Tup_completo_negro_transparente.png" alt="TUP"/> </p>
 
-
 # Pokémon TCG - TPI Programación III
 
-Proyecto base para el Trabajo Práctico Integrador de Programación III: implementación digital de **Pokémon Trading Card Game** con **Spring Boot** en backend y **Angular** en frontend.
-
-> Estado actual: este repositorio es una **estructura inicial de trabajo**. No representa todavía un MVP funcional del juego. Su objetivo es servir como base común para que el equipo implemente el MVP de forma ordenada, manteniendo contratos compartidos para backend, frontend, persistencia, WebSocket y lógica de juego.
+Implementación digital de **Pokémon Trading Card Game** (set XY1) con **Spring Boot 4.0** en backend y **Angular 20** en frontend, como Trabajo Práctico Integrador de Programación III — UTN FRC.
 
 ---
 
-## Objetivo del proyecto
-
-Construir una versión digital funcional de Pokémon TCG basada en el reglamento XY1, con:
-
-- Backend como única fuente de verdad del estado de la partida.
-- Frontend como capa de presentación e interacción.
-- Motor de reglas para setup, turnos, ataques, daño, knockouts, premios, condiciones especiales y victoria.
-- Construcción y validación de mazos.
-- Persistencia del estado de partida y log de acciones.
-- Comunicación en tiempo real mediante WebSockets.
-- Integración con datos de cartas desde caché local alimentado por la API pública de Pokémon TCG.
-
----
-
-## Estado actual del repositorio
-
-Este proyecto contiene principalmente estructura, contratos y stubs iniciales.
-
-### Incluido actualmente
-
-- Proyecto backend Spring Boot con Java 21.
-- Proyecto frontend Angular.
-- Estructura modular por dominio:
-  - `cards`
-  - `decks`
-  - `matches`
-  - `engine`
-  - `common`
-  - `config`
-- Entidades JPA iniciales.
-- Repositorios iniciales.
-- DTOs base para cartas, mazos, partidas y acciones.
-- Migración inicial de base de datos con Flyway.
-- Configuración inicial de WebSocket.
-- Contratos de IA en `/docs/contracts_ai/`.
-- Specs iniciales en `/openspec/specs/`.
-- Comandos y skills para OpenCode/OpenSpec en `/.opencode/`.
-
-### No implementado todavía
-
-- Game Engine funcional.
-- Setup completo de partida.
-- Mulligan funcional.
-- Turn Manager funcional.
-- Validación real de acciones.
-- Resolución real de ataques.
-- Cálculo real de daño, debilidad y resistencia.
-- Knockouts y toma de cartas de Premio.
-- Condiciones especiales.
-- Persistencia completa del estado luego de cada acción.
-- Controllers REST funcionales.
-- WebSocket funcional para sincronización de partida.
-- Deck Builder completo.
-- Frontend jugable.
-- Tests unitarios e integración relevantes.
-
----
-
-## Stack técnico
+## Stack tecnológico
 
 ### Backend
 
-- Java 21
-- Spring Boot
-- Maven
-- Spring Web
-- Spring Data JPA
-- Spring Validation
-- Spring WebSocket
-- Flyway
-- PostgreSQL
-- H2 para tests
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| Java | 21 (JDK) | Lenguaje principal |
+| Spring Boot | 4.0.0 | Framework de aplicación |
+| Spring Web | — | Controladores REST |
+| Spring Data JPA | — | Persistencia con Hibernate |
+| Spring Security | — | Autenticación JWT |
+| Spring WebSocket | — | Comunicación en tiempo real (STOMP) |
+| Spring Validation | — | Validación de DTOs |
+| Spring Cache | — | Caché de cartas en memoria |
+| Spring Boot Docker Compose | — | Auto-inicio del contenedor PostgreSQL |
+| Maven | 3.9+ | Build y dependencias |
+| PostgreSQL | 16 | Base de datos principal |
+| H2 | 2.4 | Base de datos en memoria para tests/dev |
+| Flyway | — | Migraciones de base de datos versionadas |
+| JaCoCo | 0.8.12 | Reporte de cobertura de código |
+| ModelMapper | 3.1.1 | Mapeo entre entidades y DTOs |
+| SpringDoc OpenAPI | 2.8.0 | Documentación Swagger/OpenAPI |
+| Lombok | 1.18.30 | Reducción de boilerplate |
+| JJWT | 0.12.6 | Tokens JWT |
+| PDFBox | 3.0.3 | Exportación de mazos a PDF |
 
 ### Frontend
 
-- Angular
-- TypeScript
-- RxJS
-
-> Nota: revisar la versión de Angular requerida por la cátedra antes de avanzar demasiado en frontend. Si el instructivo exige una versión superior a la actual, conviene actualizar temprano.
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| Angular | 20.3 | Framework de aplicación |
+| TypeScript | 5.9 | Lenguaje |
+| RxJS | 7.8 | Programación reactiva |
+| STOMP.js | 7.3 | Cliente WebSocket STOMP |
+| SockJS | 1.6 | Fallback de WebSocket |
+| Tailwind CSS | 4.3 | Estilos utilitarios |
+| Playwright | 1.61 | Tests E2E |
 
 ---
 
-## Estructura general
+## Diagrama de arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CLIENTE (Angular 20)                         │
+│                                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────────────┐  │
+│  │  Features │  │  Shared  │  │   Core   │  │  WebSocket (STOMP) │  │
+│  │ (lazy)    │  │ Components│  │ API/     │  │  match-socket      │  │
+│  │           │  │          │  │ Auth/    │  │  .service.ts       │  │
+│  │ - auth    │  │ - cards  │  │ Config   │  └────────┬───────────┘  │
+│  │ - decks   │  │ - common │  │          │           │              │
+│  │ - match   │  │          │  │          │           │              │
+│  │ - lobby   │  │          │  │          │           │              │
+│  │ - ranking │  │          │  │          │           │              │
+│  │ - history │  │          │  │          │           │              │
+│  └──────────┘  └──────────┘  └─────┬────┘           │              │
+└────────────────────────────────────┼─────────────────┼──────────────┘
+                                     │ HTTP (REST)     │ WS (STOMP)
+                                     ▼                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     BACKEND (Spring Boot 4.0)                        │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Controller Layer                                             │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐   │   │
+│  │  │  Match   │ │  Deck    │ │  Card    │ │ User / Player  │   │   │
+│  │  │Controller│ │Controller│ │Controller│ │ Controllers    │   │   │
+│  │  └─────┬────┘ └────┬─────┘ └────┬─────┘ └───────┬────────┘   │   │
+│  └────────┼───────────┼────────────┼───────────────┼─────────────┘   │
+│           ▼           ▼            ▼               ▼                 │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Service Layer                                               │   │
+│  │  Match, Deck, Card, User, Player, Ranking, CardSync, Pdf    │   │
+│  └──────────────────────────┬───────────────────────────────────┘   │
+│                             ▼                                       │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Game Engine (pure Java, sin dependencias Spring)             │   │
+│  │                                                               │   │
+│  │  ┌─────────────┐  ┌──────────────────┐  ┌────────────────┐   │   │
+│  │  │ GameEngine   │  │  RuleValidator   │  │  TurnManager   │   │   │
+│  │  │ (Command)    │  │  (Strategy)      │  │  (State)       │   │   │
+│  │  └──────┬──────┘  └──────────────────┘  └────────────────┘   │   │
+│  │         │                                                      │   │
+│  │         ▼                                                      │   │
+│  │  ┌──────────────────────────────────────────────────┐          │   │
+│  │  │  Attack Pipeline (Chain of Responsibility)        │          │   │
+│  │  │  Prerequisite → EnergyCheck → ConfusionCheck →   │          │   │
+│  │  │  ConditionCheck → Modifier → TargetSelection →   │          │   │
+│  │  │  PreDamage → Damage → PostDamage → KO Check      │          │   │
+│  │  └──────────────────────────────────────────────────┘          │   │
+│  │                                                               │   │
+│  │  ┌────────────────────────────┐  ┌────────────────────────┐   │   │
+│  │  │  Trainer Effect Resolver   │  │  Ability Resolver      │   │   │
+│  │  │  (Registry Pattern)        │  │  (Registry Pattern)    │   │   │
+│  │  └────────────────────────────┘  └────────────────────────┘   │   │
+│  └──────────┬────────────────────────────────────────────────────┘   │
+│             │  Ports (Hexagonal Architecture)                         │
+│             ▼                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Adapters                                                     │   │
+│  │  ┌──────────────┐ ┌────────────┐ ┌───────────────────────┐   │   │
+│  │  │ CardLookup   │ │ State      │ │ EventPublisher       │   │   │
+│  │  │ Adapter      │ │ Persister  │ │ (WebSocket Publisher)│   │   │
+│  │  └──────────────┘ └────────────┘ └───────────────────────┘   │   │
+│  │  ┌──────────────┐ ┌────────────┐ ┌───────────────────────┐   │   │
+│  │  │ Randomizer   │ │ DeckLoad   │ │ CardCacheSyncService  │   │   │
+│  │  │ Adapter      │ │ Adapter    │ │ (Pokemon TCG API)     │   │   │
+│  │  └──────────────┘ └────────────┘ └───────────────────────┘   │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Persistence Layer                                             │   │
+│  │  JPA Entities → Spring Data JPA → Flyway → PostgreSQL / H2   │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Instalación y ejecución local
+
+### Requisitos
+
+| Componente | Versión | Verificación |
+|------------|---------|:------------:|
+| Java JDK | 21 | `java -version` |
+| Maven | 3.9+ | `mvn -version` |
+| Node.js | 20+ | `node -version` |
+| npm | 10+ | `npm -version` |
+| Docker | 24+ | `docker --version` |
+
+### 1. Clonar el repositorio
+
+```bash
+git clone <repo-url>
+cd Pokemon-TCG-G8
+```
+
+### 2. Base de datos
+
+Hay dos opciones:
+
+**Opción A: PostgreSQL con Docker (recomendado)**
+
+```bash
+docker compose up -d
+```
+
+Esto levanta PostgreSQL 16 en `localhost:5432` con:
+- Base: `pokemon_tcg`
+- Usuario: `postgres`
+- Contraseña: `postgres`
+- Puerto: `5432`
+
+**Opción B: H2 en memoria (sin Docker, ideal para desarrollo rápido)**
+
+No requiere Docker. Se usa el perfil `dev` al iniciar el backend.
+
+### 3. Backend
+
+```bash
+cd BE
+
+# Con PostgreSQL (requiere Docker arriba)
+mvn spring-boot:run
+
+# Con H2 en memoria (sin Docker)
+mvn spring-boot:run -Dspring.profiles.active=dev
+```
+
+El backend se inicia en `http://localhost:8080`.
+
+Al iniciar por primera vez:
+1. Flyway ejecuta las migraciones (creación de tablas y usuarios de prueba)
+2. El `CardCacheSyncService` sincroniza las cartas desde la API pública de Pokémon TCG
+3. El `SeederTestConfig` crea usuarios semilla y mazos predefinidos
+
+**Usuarios de prueba:**
+
+| Email | Contraseña | Nombre |
+|-------|-----------|--------|
+| `ash@pokemon.com` | `password123` | Ash Ketchum |
+| `misty@pokemon.com` | `password456` | Misty |
+
+### 4. Frontend
+
+```bash
+cd FE
+npm install
+ng serve
+```
+
+El frontend se inicia en `http://localhost:4200`. Las llamadas a `/api/**` se redirigen automáticamente al backend.
+
+### 5. Verificar
+
+| Componente | URL |
+|------------|-----|
+| Frontend | `http://localhost:4200` |
+| Backend health | `http://localhost:8080/ping` |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| OpenAPI spec | `http://localhost:8080/v3/api-docs` |
+
+---
+
+## Ejecutar pruebas
+
+```bash
+cd BE
+
+# Todas las pruebas
+mvn test
+
+# Pruebas específicas
+mvn test -Dtest="RuleValidatorTest,GameEngineTest"
+
+# Reporte de cobertura JaCoCo (se genera automáticamente con mvn test)
+# Abrir BE/target/site/jacoco/index.html
+
+# Ignorar fallos de contexto Spring en tests que no dependen de DB
+mvn test -Dtest="RuleValidatorTest" -DfailIfNoTests=false
+```
+
+---
+
+## Estado del proyecto
+
+### Implementado
+
+- **Motor de juego completo**: 19 tipos de acción con handlers específicos (Command Pattern)
+- **Pipeline de ataque**: 10 pasos en cadena (Chain of Responsibility) incluyendo daño, condición, KO y chequeo de energía
+- **Sistema de turnos**: Draw → Main → Attack → Between Turns (State Pattern)
+- **Setup de partida**: Colocación de activo/banca, mulligan, confirmación
+- **Validación de reglas**: RuleValidator con 20 validaciones (todas las acciones de juego)
+- **Sistema de energía**: 4 estrategias (básica, doble incolora, arcoíris, fuerte)
+- **Efectos de entrenadores**: 22 tipos de efectos registrados
+- **Habilidades de Pokémon**: 6 habilidades implementadas
+- **Condiciones especiales**: Dormido, quemado, confundido, paralizado, envenenado
+- **Condiciones de victoria**: Premios, knockout, deck-out, muerte súbita, rendición
+- **Persistencia**: Estado serializado después de cada acción
+- **API REST**: 11 controladores con ~40 endpoints documentados en Swagger
+- **WebSocket STOMP**: Sincronización en tiempo real de eventos de partida
+- **Autenticación JWT**: Login/registro con tokens
+- **Mazos**: CRUD completo, validación (60 cartas, ≤4 copias, ≥1 básico), importación TXT/JSON, exportación PDF, mazos predefinidos, generación aleatoria
+- **Catálogo de cartas**: Sincronización desde Pokemon TCG API con caché local
+- **Frontend Angular**: 12 módulos funcionales (auth, decks, match, lobby, ranking, history, profile, cards, rules, sandbox, home, splash)
+
+### Perfiles de configuración
+
+| Perfil | Base de datos | Docker | Flyway | JPA DDL |
+|--------|:-------------:|:------:|:------:|:--------:|
+| `default` | PostgreSQL | Requerido | Habilitado | `validate` |
+| `dev` | H2 en memoria | No | Deshabilitado | `update` |
+
+---
+
+## Documentación técnica
+
+El informe técnico completo está disponible en:
+
+```
+BE/docs/informe-tecnico.md
+```
+
+Incluye:
+- Especificación completa de la API REST (todos los endpoints, DTOs, ejemplos)
+- Decisiones de diseño justificadas (arquitectura hexagonal, patrones, etc.)
+- Manual de despliegue detallado
+
+Swagger UI disponible en `http://localhost:8080/swagger-ui.html` (requiere backend corriendo).
+
+---
+
+## Estructura del proyecto
 
 ```text
-.
-├── backend/
-│   ├── pom.xml
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/pokemontcg/
-│       │   │   ├── cards/
-│       │   │   ├── decks/
-│       │   │   ├── matches/
-│       │   │   ├── engine/
-│       │   │   ├── common/
-│       │   │   └── config/
-│       │   └── resources/
-│       │       ├── application.yml
-│       │       └── db/migration/
-│       └── test/
-├── frontend/
-│   ├── package.json
-│   └── src/app/
-│       ├── core/
-│       ├── features/
-│       └── shared/
-├── docs/
-│   ├── contracts_ai/
-├── openspec/
-│   ├── config.yaml
-│   └── specs/
-├── .opencode/
-├── Workflow.md
-└── README.md
+Pokemon-TCG-G8/
+├── BE/                              # Backend Spring Boot
+│   ├── src/main/java/.../
+│   │   ├── Application.java         # Punto de entrada
+│   │   ├── configs/                 # Configuraciones Spring
+│   │   ├── controllers/             # Controladores REST
+│   │   ├── domain/                  # Modelos de dominio puros
+│   │   ├── engine/                  # Motor de juego (hexagonal)
+│   │   │   ├── GameEngine.java      # Orquestador
+│   │   │   ├── rules/               # Validación de reglas
+│   │   │   ├── handlers/            # Handlers de acciones
+│   │   │   ├── attack/              # Pipeline de ataque
+│   │   │   ├── turn/                # Gestión de turnos
+│   │   │   ├── model/               # Estado de partida
+│   │   │   ├── energy/              # Sistema de energía
+│   │   │   ├── trainer/             # Efectos de entrenadores
+│   │   │   ├── ability/             # Habilidades de Pokémon
+│   │   │   ├── event/               # Eventos de juego
+│   │   │   ├── victory/             # Condiciones de victoria
+│   │   │   ├── setup/               # Setup de partida
+│   │   │   └── ports/               # Puertos (hexagonal)
+│   │   ├── services/                # Servicios de negocio
+│   │   ├── mappers/                 # Mapeo entidad ↔ DTO
+│   │   ├── repositories/            # JPA repositories y entities
+│   │   ├── security/                # JWT + Spring Security
+│   │   ├── websocket/               # WebSocket STOMP
+│   │   └── clients/                 # Clientes HTTP externos
+│   ├── src/main/resources/
+│   │   ├── application.properties
+│   │   ├── application-dev.properties
+│   │   └── db/migration/            # Migraciones Flyway
+│   ├── docs/informe-tecnico.md      # Documentación técnica
+│   └── pom.xml
+├── FE/                              # Frontend Angular
+│   ├── src/app/
+│   │   ├── app.ts                   # Componente raíz
+│   │   ├── core/                    # API, auth, WebSocket
+│   │   ├── features/                # Módulos funcionales
+│   │   └── shared/                  # Componentes compartidos
+│   └── package.json
+├── docker-compose.yml               # PostgreSQL
+└── docs/                            # Documentación adicional
 ```
 
 ---
@@ -164,146 +363,13 @@ La carpeta principal para orientar a OpenCode/OpenSpec es:
 /docs/contracts_ai/
 ```
 
-Estos contratos definen el lenguaje común del proyecto:
-
-- reglas generales del proyecto;
-- estructura esperada;
-- enums compartidos;
-- modelo de cartas;
-- contratos de mazos;
-- estado de partida;
-- flujo de setup;
-- acciones de juego;
-- validaciones;
-- pipeline de ataque;
-- condiciones especiales;
-- persistencia y logs;
-- REST API;
-- WebSocket;
-- estado frontend;
-- escenarios de test.
-
-### Regla de trabajo
-
-Si una implementación necesita cambiar DTOs, endpoints, eventos, enums, estados, acciones o reglas, primero debe actualizarse el contrato correspondiente.
-
-El orden recomendado es:
-
-```text
-1. Leer contrato.
-2. Crear proposal en OpenSpec.
-3. Revisar alcance.
-4. Aplicar cambio.
-5. Implementar código.
-6. Agregar tests o pasos de verificación.
-```
-
----
-
-## Cómo levantar el backend
-
-### 1. Requisitos
-
-- Java 21 instalado.
-- Maven instalado o Maven Wrapper si se agrega luego.
-- PostgreSQL corriendo localmente.
-
-### 2. Crear base de datos
-
-Revisar el archivo:
-
-```text
-backend/src/main/resources/application.yml
-```
-
-La configuración actual espera una base PostgreSQL local. Crear la base con el nombre configurado o ajustar el `application.yml` a la base local de cada integrante.
-
-Ejemplo desde `psql`:
-
-```sql
-CREATE DATABASE V1__init_schema;
-```
-
-### 3. Ejecutar backend
-
-Desde la carpeta `backend`:
-
-```bash
-mvn spring-boot:run
-```
-
-O para validar compilación y tests:
-
-```bash
-mvn clean test
-```
-
-El backend usa por defecto:
-
-```text
-http://localhost:8080
-```
-
----
-
-## Cómo levantar el frontend
-
-### 1. Requisitos
-
-- Node.js instalado.
-- npm instalado.
-- Angular CLI instalado o usar `npx ng`.
-
-### 2. Instalar dependencias
-
-Desde la carpeta `frontend`:
-
-```bash
-npm install
-```
-
-### 3. Ejecutar frontend
-
-```bash
-npm start
-```
-
-Por defecto Angular levanta en:
-
-```text
-http://localhost:4200
-```
-
----
-
-## Flujo de trabajo recomendado para el equipo
-
-Cada integrante debe trabajar sobre una feature o módulo concreto, evitando modificar áreas ajenas sin coordinación.
-
-### División sugerida
-
-| Área | Carpetas principales | Contratos relacionados |
-|---|---|---|
-| Game Engine / turnos | `backend/.../engine/turn`, `engine/rules` | `08`, `09` |
-| Setup / mulligan | `backend/.../engine/setup` | `07` |
-| Ataques y daño | `backend/.../engine/attack` | `10` |
-| Condiciones especiales | `backend/.../engine/status` | `11` |
-| Victoria / knockout | `backend/.../engine/victory` | `06`, `10`, `11` |
-| Mazos | `backend/.../decks` | `05` |
-| Cartas / caché local | `backend/.../cards` | `04` |
-| Partidas / persistencia | `backend/.../matches` | `12`, `13` |
-| WebSocket | `backend/.../matches/websocket`, `config/WebSocketConfig` | `14` |
-| Frontend partida | `frontend/src/app/features/match` | `15` |
-| Frontend mazos | `frontend/src/app/features/decks` | `05`, `15` |
-| Lobby | `frontend/src/app/features/lobby` | `13`, `14`, `15` |
+Estos contratos definen el lenguaje común del proyecto. Ver `BE/docs/informe-tecnico.md` para documentación detallada de la API, decisiones de diseño y despliegue.
 
 ---
 
 ## Reglas de Git
 
 ### No subir archivos generados
-
-No deben subirse:
 
 - `node_modules/`
 - `dist/`
@@ -315,81 +381,17 @@ No deben subirse:
 
 Usar el archivo `.gitignore` del proyecto.
 
-### Branches sugeridas
+### Commits
 
-```text
-main
-feature/game-engine-turns
-feature/setup-mulligan
-feature/attack-pipeline
-feature/deck-builder
-feature/websocket-sync
-feature/frontend-match-board
+Formato: `<tipo>(<scope>): <descripción>`
+
+Tipos: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`
+Scopes: `engine`, `attack`, `turn`, `decks`, `match`, `api`, `websocket`, `frontend`
+
+Ejemplos:
 ```
-
-### Commits sugeridos
-
-Formato simple:
-
-```text
 feat(engine): add turn phase validation skeleton
 fix(decks): adjust deck validation contract
- docs(readme): document project structure
- test(attack): add damage calculator cases
+docs(readme): document project structure
+test(attack): add damage calculator cases
 ```
-
----
-
-## Orden recomendado de implementación del MVP
-
-1. Limpiar repositorio y confirmar `.gitignore`.
-2. Confirmar contratos canónicos en `/docs/contracts_ai/`.
-3. Crear seed mínimo de cartas y dos mazos válidos.
-4. Implementar validación de mazos.
-5. Implementar setup de partida.
-6. Implementar turnos y fases.
-7. Implementar acciones básicas:
-   - colocar básico en banca;
-   - unir energía;
-   - atacar;
-   - finalizar turno.
-8. Implementar cálculo de daño.
-9. Implementar knockout y premios.
-10. Implementar condiciones de victoria.
-11. Implementar condiciones especiales.
-12. Exponer endpoints REST.
-13. Sincronizar por WebSocket.
-14. Implementar frontend mínimo jugable.
-15. Agregar tests unitarios y de integración.
-16. Actualizar documentación final.
-
----
-
-## Criterio de arquitectura
-
-- El backend decide todo.
-- El frontend no calcula reglas de juego.
-- El frontend envía acciones.
-- El backend valida acciones.
-- El backend genera eventos.
-- El backend persiste estado y logs.
-- El frontend renderiza la vista recibida.
-- Las cartas usadas en partida deben salir del caché local, no de llamadas directas a la API externa.
-
----
-
-## Advertencias importantes
-
-- Este repositorio no debe presentarse como MVP funcional todavía.
-- La estructura está preparada para construir el MVP, pero falta implementar la lógica real.
-- No modificar contratos sin registrar el cambio.
-- No implementar reglas inventadas fuera del reglamento o del instructivo.
-- No duplicar fuentes de verdad entre backend, frontend y documentación.
-
----
-
-## Documentación relevante
-
-- `Workflow.md`: flujo de trabajo con OpenSpec/OpenCode.
-- `/docs/contracts_ai/`: contratos principales para IA e implementación.
-- `/openspec/specs/`: specs iniciales del proyecto.
