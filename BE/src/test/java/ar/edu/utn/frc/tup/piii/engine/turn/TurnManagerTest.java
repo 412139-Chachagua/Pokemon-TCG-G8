@@ -69,14 +69,14 @@ class TurnManagerTest {
     }
 
     @Test
-    void shouldResetPendingPrizeOwnerOnStartTurn() {
+    void shouldPreservePendingPrizeOwnerOnStartTurn() {
         state.setPendingPrizeOwnerPlayerId(playerId);
         state.setPendingPrizeCount(2);
 
         turnManager.startTurn(ctx);
 
-        assertNull(state.getPendingPrizeOwnerPlayerId());
-        assertEquals(0, state.getPendingPrizeCount());
+        assertEquals(playerId, state.getPendingPrizeOwnerPlayerId());
+        assertEquals(2, state.getPendingPrizeCount());
     }
 
     @Test

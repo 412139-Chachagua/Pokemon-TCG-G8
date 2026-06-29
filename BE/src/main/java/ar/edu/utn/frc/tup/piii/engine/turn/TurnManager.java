@@ -35,9 +35,6 @@ public class TurnManager {
         resetAbilitiesUsedThisTurn(currentPlayer);
         resetAbilitiesSuppressedNextTurn(state);
 
-        state.setPendingPrizeOwnerPlayerId(null);
-        state.setPendingPrizeCount(0);
-
         // If there's a pending KO replacement for the current player, skip auto-draw
         if (state.isPendingKOReplacement()
                 && state.getKnockedOutPlayerId() != null
