@@ -242,7 +242,6 @@ class AbilitySystemTest {
         CardLookupPort cardLookup = mock(CardLookupPort.class);
         when(cardLookup.getCardById("energy-fairy")).thenReturn(createFairyEnergyCardDef());
         when(cardLookup.getCardById("pkm-sweetveil")).thenReturn(createSweetVeilPokemonDef());
-        when(cardLookup.getCardById("pkm-target")).thenReturn(createNonSweetVeilPokemonDef());
 
         SweetVeilHook.syncImmunity(player, cardLookup);
 
@@ -734,7 +733,6 @@ class AbilitySystemTest {
         PlayerState opponent = mockPlayer(opponentId);
         PokemonInPlay target = createPokemon("pkm-target");
         when(opponent.getActivePokemon()).thenReturn(target);
-        when(opponent.getBench()).thenReturn(new ArrayList<>());
         when(ctx.getOpponent(playerId)).thenReturn(opponent);
 
         Map<String, Object> payload = new HashMap<>();
@@ -1131,7 +1129,6 @@ class AbilitySystemTest {
 
         UUID opponentId = UUID.randomUUID();
         PlayerState opponent = mockPlayer(opponentId);
-        when(opponent.getActivePokemon()).thenReturn(createPokemon("pkm-active"));
         when(opponent.getBench()).thenReturn(new ArrayList<>());
         when(ctx.getOpponent(playerId)).thenReturn(opponent);
 
@@ -1210,16 +1207,6 @@ class AbilitySystemTest {
         PokemonInPlay inkay = createPokemon("pkm-inkay");
         inkay.setSpecialConditions(new ArrayList<>(List.of(SpecialCondition.CONFUSED)));
 
-        List<CardInstance> hand = new ArrayList<>();
-        when(player.getHand()).thenReturn(hand);
-        when(player.getDeck()).thenReturn(new ArrayList<>());
-
-        CardLookupPort cardLookup = mock(CardLookupPort.class);
-        PokemonCardDefinition inkayDef = new PokemonCardDefinition();
-        inkayDef.setEvolvesFrom("Inkay");
-        when(cardLookup.getCardById("pkm-inkay")).thenReturn(inkayDef);
-        when(ctx.getCardLookup()).thenReturn(cardLookup);
-
         UpsideDownEvolutionResolver resolver = new UpsideDownEvolutionResolver();
         resolver.resolve(ctx, player, inkay, mock(AbilityDefinition.class), new HashMap<>());
 
@@ -1250,6 +1237,7 @@ class AbilitySystemTest {
         when(player.getBench()).thenReturn(bench);
 
         CardLookupPort cardLookup = mock(CardLookupPort.class);
+        when(cardLookup.getCardById(any())).thenReturn(createNonSweetVeilPokemonDef());
         PokemonCardDefinition inkayDef = new PokemonCardDefinition();
         inkayDef.setEvolvesFrom("Inkay");
         when(cardLookup.getCardById("pkm-inkay")).thenReturn(inkayDef);
