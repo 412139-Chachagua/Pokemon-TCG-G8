@@ -121,6 +121,105 @@ class RuleValidatorTest {
     }
 
     @Test
+    void shouldRejectEvolve_whenHandCardIsBasic() {
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canPlay()).thenReturn(true);
+        when(ctx.getState()).thenReturn(state);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.hasPlayerCompletedFirstTurn(playerId)).thenReturn(true);
+
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID handCardId = UUID.randomUUID();
+        when(player.getHand()).thenReturn(List.of(new CardInstance(handCardId, "pikachu")));
+        PokemonCardDefinition basicDef = new PokemonCardDefinition();
+        basicDef.setStage("BASIC");
+        when(cardLookup.getCardById("pikachu")).thenReturn(basicDef);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.EVOLVE_POKEMON);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("handIndex", 0, "targetPokemonInstanceId", UUID.randomUUID().toString()));
+
+        assertFalse(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldRejectEvolve_whenEvolvesFromDoesNotMatch() {
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canPlay()).thenReturn(true);
+        when(ctx.getState()).thenReturn(state);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.hasPlayerCompletedFirstTurn(playerId)).thenReturn(true);
+        when(state.getTurnNumber()).thenReturn(5);
+
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID handCardId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        PokemonInPlay target = new PokemonInPlay();
+        target.setInstanceId(targetId);
+        target.setCardDefinitionId("charmander");
+        target.setEnteredTurnNumber(3);
+
+        when(player.getHand()).thenReturn(List.of(new CardInstance(handCardId, "raichu")));
+        when(player.getBench()).thenReturn(List.of(target));
+
+        PokemonCardDefinition evoDef = new PokemonCardDefinition();
+        evoDef.setStage("STAGE_1");
+        evoDef.setEvolvesFrom("Pikachu");
+        when(cardLookup.getCardById("raichu")).thenReturn(evoDef);
+
+        PokemonCardDefinition targetDef = new PokemonCardDefinition();
+        targetDef.setName("Charmander");
+        targetDef.setStage("BASIC");
+        when(cardLookup.getCardById("charmander")).thenReturn(targetDef);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.EVOLVE_POKEMON);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("handIndex", 0, "targetPokemonInstanceId", targetId.toString()));
+
+        assertFalse(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldRejectEvolve_whenInvalidStageProgression() {
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canPlay()).thenReturn(true);
+        when(ctx.getState()).thenReturn(state);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.hasPlayerCompletedFirstTurn(playerId)).thenReturn(true);
+        when(state.getTurnNumber()).thenReturn(5);
+
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID handCardId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        PokemonInPlay target = new PokemonInPlay();
+        target.setInstanceId(targetId);
+        target.setCardDefinitionId("pikachu");
+        target.setEnteredTurnNumber(3);
+
+        when(player.getHand()).thenReturn(List.of(new CardInstance(handCardId, "raichu")));
+        when(player.getBench()).thenReturn(List.of(target));
+
+        PokemonCardDefinition evoDef = new PokemonCardDefinition();
+        evoDef.setStage("STAGE_2");
+        evoDef.setEvolvesFrom("Pikachu");
+        when(cardLookup.getCardById("raichu")).thenReturn(evoDef);
+
+        PokemonCardDefinition targetDef = new PokemonCardDefinition();
+        targetDef.setName("Pikachu");
+        targetDef.setStage("BASIC");
+        when(cardLookup.getCardById("pikachu")).thenReturn(targetDef);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.EVOLVE_POKEMON);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("handIndex", 0, "targetPokemonInstanceId", targetId.toString()));
+
+        assertFalse(validator.validate(ctx, action));
+    }
+
+    @Test
     void shouldRejectAttackOnPlayersFirstTurn() {
         TurnState turnState = mock(TurnState.class);
         when(turnState.canAttack()).thenReturn(true);
@@ -168,6 +267,107 @@ class RuleValidatorTest {
         action.setPayload(Map.of("attackIndex", 0));
 
         assertTrue(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldRejectAttack_whenNoActivePokemon() {
+        when(ctx.getState()).thenReturn(state);
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canAttack()).thenReturn(true);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.getFirstPlayerId()).thenReturn(UUID.randomUUID());
+        when(state.getTurnFlags()).thenReturn(new TurnFlags());
+        when(player.getActivePokemon()).thenReturn(null);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.DECLARE_ATTACK);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("attackIndex", 0));
+
+        assertFalse(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldRejectAttack_whenAlreadyAttacked() {
+        when(ctx.getState()).thenReturn(state);
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canAttack()).thenReturn(true);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.getFirstPlayerId()).thenReturn(UUID.randomUUID());
+        TurnFlags flags = new TurnFlags();
+        flags.setHasAttacked(true);
+        when(state.getTurnFlags()).thenReturn(flags);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.DECLARE_ATTACK);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("attackIndex", 0));
+
+        assertFalse(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldRejectAttack_whenInvalidAttackIndex() {
+        PokemonInPlay active = new PokemonInPlay();
+        active.setCardDefinitionId("charizard");
+        active.setSpecialConditions(new ArrayList<>());
+
+        PokemonCardDefinition activeDef = new PokemonCardDefinition();
+        var attack = new PokemonCardDefinition.AttackDefinition();
+        attack.setIndex(0);
+        activeDef.setAttacks(List.of(attack));
+
+        when(ctx.getState()).thenReturn(state);
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canAttack()).thenReturn(true);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.getFirstPlayerId()).thenReturn(UUID.randomUUID());
+        when(state.getTurnFlags()).thenReturn(new TurnFlags());
+        when(player.getActivePokemon()).thenReturn(active);
+        when(cardLookup.getCardById("charizard")).thenReturn(activeDef);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.DECLARE_ATTACK);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("attackIndex", 5));
+
+        assertFalse(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldRejectAttack_whenInsufficientEnergy() {
+        PokemonInPlay active = new PokemonInPlay();
+        active.setCardDefinitionId("charizard");
+        active.setSpecialConditions(new ArrayList<>());
+
+        PokemonCardDefinition activeDef = new PokemonCardDefinition();
+        var attack = new PokemonCardDefinition.AttackDefinition();
+        attack.setIndex(0);
+        attack.setCost(new ArrayList<>());
+        attack.setDamage("50");
+        activeDef.setAttacks(List.of(attack));
+
+        when(ctx.getState()).thenReturn(state);
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        when(ctx.getEnergyService()).thenReturn(energyService);
+        when(ctx.getCardLookup()).thenReturn(cardLookup);
+        TurnState turnState = mock(TurnState.class);
+        when(turnState.canAttack()).thenReturn(true);
+        when(state.getTurnState()).thenReturn(turnState);
+        when(state.getFirstPlayerId()).thenReturn(UUID.randomUUID());
+        when(state.getTurnFlags()).thenReturn(new TurnFlags());
+        when(player.getActivePokemon()).thenReturn(active);
+        when(cardLookup.getCardById("charizard")).thenReturn(activeDef);
+        when(energyService.checkAttackRequirements(active, cardLookup, 0)).thenReturn(false);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.DECLARE_ATTACK);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("attackIndex", 0));
+
+        assertFalse(validator.validate(ctx, action));
     }
 
     @Test
@@ -804,6 +1004,148 @@ class RuleValidatorTest {
         assertFalse(validatorWithRegistry.validate(ctx, action));
     }
 
+    @Test
+    void shouldAcceptPlayTrainerDiscardOpponentEnergy_whenTargetingOpponentActive() {
+        RuleValidator validatorWithRegistry = new RuleValidator(cardLookup, effectRegistry);
+        givenCanPlay();
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID cardId = UUID.randomUUID();
+        when(player.getHand()).thenReturn(List.of(new CardInstance(cardId, "team-flare-grunt")));
+        TrainerCardDefinition trainerCard = new TrainerCardDefinition();
+        trainerCard.setTrainerSubtype(TrainerSubtype.SUPPORTER);
+        trainerCard.setEffectCode("DISCARD_OPPONENT_ENERGY");
+        when(cardLookup.getCardById("team-flare-grunt")).thenReturn(trainerCard);
+        when(effectRegistry.isEffectCodeKnown("DISCARD_OPPONENT_ENERGY")).thenReturn(true);
+        when(effectRegistry.getEffectType("DISCARD_OPPONENT_ENERGY")).thenReturn(EffectType.DISCARD_OPPONENT_ENERGY);
+        when(effectRegistry.getRequiredTargetKeys(EffectType.DISCARD_OPPONENT_ENERGY)).thenReturn(List.of("targetPokemonInstanceId"));
+
+        UUID opponentPokeId = UUID.randomUUID();
+        when(player.getActivePokemon()).thenReturn(new PokemonInPlay() {{
+            setInstanceId(UUID.randomUUID());
+        }});
+        when(player.getBench()).thenReturn(List.of());
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.PLAY_TRAINER);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("handIndex", 0, "targetPokemonInstanceId", opponentPokeId.toString()));
+
+        assertTrue(validatorWithRegistry.validate(ctx, action));
+    }
+
+    @Test
+    void shouldAcceptPlayTrainerEvolveDirect_whenValid() {
+        RuleValidator validatorWithRegistry = new RuleValidator(cardLookup, effectRegistry);
+        givenCanPlay();
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID cardId = UUID.randomUUID();
+        when(player.getHand()).thenReturn(List.of(new CardInstance(cardId, "rare-candy")));
+        TrainerCardDefinition trainerCard = new TrainerCardDefinition();
+        trainerCard.setTrainerSubtype(TrainerSubtype.SUPPORTER);
+        trainerCard.setEffectCode("EVOLVE_DIRECT");
+        when(cardLookup.getCardById("rare-candy")).thenReturn(trainerCard);
+        when(effectRegistry.isEffectCodeKnown("EVOLVE_DIRECT")).thenReturn(true);
+        when(effectRegistry.getEffectType("EVOLVE_DIRECT")).thenReturn(EffectType.EVOLVE_DIRECT);
+        when(effectRegistry.getRequiredTargetKeys(EffectType.EVOLVE_DIRECT)).thenReturn(List.of("targetPokemonInstanceId"));
+        when(state.hasPlayerCompletedFirstTurn(playerId)).thenReturn(true);
+        when(state.getTurnNumber()).thenReturn(5);
+        UUID targetId = UUID.randomUUID();
+        PokemonInPlay target = new PokemonInPlay();
+        target.setInstanceId(targetId);
+        target.setEnteredTurnNumber(3);
+        when(player.getActivePokemon()).thenReturn(target);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.PLAY_TRAINER);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("handIndex", 0, "targetPokemonInstanceId", targetId.toString()));
+
+        assertTrue(validatorWithRegistry.validate(ctx, action));
+    }
+
+    @Test
+    void shouldAcceptPlayTrainerReturnToDeck_whenActiveTargetWithReplacement() {
+        RuleValidator validatorWithRegistry = new RuleValidator(cardLookup, effectRegistry);
+        givenCanPlay();
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID cardId = UUID.randomUUID();
+        when(player.getHand()).thenReturn(List.of(new CardInstance(cardId, "cassius")));
+        TrainerCardDefinition trainerCard = new TrainerCardDefinition();
+        trainerCard.setTrainerSubtype(TrainerSubtype.SUPPORTER);
+        trainerCard.setEffectCode("RETURN_TO_DECK");
+        when(cardLookup.getCardById("cassius")).thenReturn(trainerCard);
+        when(effectRegistry.isEffectCodeKnown("RETURN_TO_DECK")).thenReturn(true);
+        when(effectRegistry.getEffectType("RETURN_TO_DECK")).thenReturn(EffectType.RETURN_POKEMON_TO_DECK);
+        when(effectRegistry.getRequiredTargetKeys(EffectType.RETURN_POKEMON_TO_DECK)).thenReturn(List.of("targetPokemonInstanceId"));
+        UUID targetId = UUID.randomUUID();
+        PokemonInPlay active = new PokemonInPlay();
+        active.setInstanceId(targetId);
+        when(player.getActivePokemon()).thenReturn(active);
+        when(player.getBench()).thenReturn(List.of(new PokemonInPlay() {{
+            setInstanceId(UUID.randomUUID());
+        }}));
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.PLAY_TRAINER);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of(
+            "handIndex", 0,
+            "targetPokemonInstanceId", targetId.toString(),
+            "newActiveInstanceId", UUID.randomUUID().toString()
+        ));
+
+        assertTrue(validatorWithRegistry.validate(ctx, action));
+    }
+
+    @Test
+    void shouldAcceptPlayTrainerReturnToDeck_whenNullTarget() {
+        RuleValidator validatorWithRegistry = new RuleValidator(cardLookup, effectRegistry);
+        givenCanPlay();
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID cardId = UUID.randomUUID();
+        when(player.getHand()).thenReturn(List.of(new CardInstance(cardId, "cassius")));
+        TrainerCardDefinition trainerCard = new TrainerCardDefinition();
+        trainerCard.setTrainerSubtype(TrainerSubtype.SUPPORTER);
+        trainerCard.setEffectCode("RETURN_TO_DECK");
+        when(cardLookup.getCardById("cassius")).thenReturn(trainerCard);
+        when(effectRegistry.isEffectCodeKnown("RETURN_TO_DECK")).thenReturn(true);
+        when(effectRegistry.getEffectType("RETURN_TO_DECK")).thenReturn(EffectType.RETURN_POKEMON_TO_DECK);
+        when(effectRegistry.getRequiredTargetKeys(EffectType.RETURN_POKEMON_TO_DECK)).thenReturn(List.of("targetPokemonInstanceId"));
+        when(player.getBench()).thenReturn(List.of(new PokemonInPlay()));
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.PLAY_TRAINER);
+        action.setPlayerId(playerId);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("handIndex", 0);
+        payload.put("targetPokemonInstanceId", null);
+        action.setPayload(payload);
+
+        assertTrue(validatorWithRegistry.validate(ctx, action));
+    }
+
+    @Test
+    void shouldAcceptPlayTrainer_whenEffectTypeNull() {
+        RuleValidator validatorWithRegistry = new RuleValidator(cardLookup, effectRegistry);
+        givenCanPlay();
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        UUID cardId = UUID.randomUUID();
+        when(player.getHand()).thenReturn(List.of(new CardInstance(cardId, "some-trainer")));
+        TrainerCardDefinition trainerCard = new TrainerCardDefinition();
+        trainerCard.setTrainerSubtype(TrainerSubtype.SUPPORTER);
+        trainerCard.setEffectCode("SOME_EFFECT");
+        when(cardLookup.getCardById("some-trainer")).thenReturn(trainerCard);
+        when(effectRegistry.isEffectCodeKnown("SOME_EFFECT")).thenReturn(true);
+        when(effectRegistry.getEffectType("SOME_EFFECT")).thenReturn(null);
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.PLAY_TRAINER);
+        action.setPlayerId(playerId);
+        action.setPayload(Map.of("handIndex", 0));
+
+        assertTrue(validatorWithRegistry.validate(ctx, action));
+    }
+
     // ============================================================
     // validateRetreat
     // ============================================================
@@ -982,6 +1324,31 @@ class RuleValidatorTest {
         action.setType(GameActionType.RETREAT_ACTIVE);
         action.setPlayerId(playerId);
         action.setPayload(new HashMap<>());
+
+        assertTrue(validator.validate(ctx, action));
+    }
+
+    @Test
+    void shouldAcceptRetreat_whenWithEnergyDiscard() {
+        givenCanPlay();
+        when(state.getTurnFlags()).thenReturn(new TurnFlags());
+        when(ctx.getPlayer(playerId)).thenReturn(player);
+        when(player.getBench()).thenReturn(List.of(new PokemonInPlay()));
+        PokemonInPlay active = new PokemonInPlay();
+        active.setSpecialConditions(new ArrayList<>());
+        active.setAttachedEnergies(new ArrayList<>());
+        when(player.getActivePokemon()).thenReturn(active);
+        when(ctx.getEnergyService()).thenReturn(energyService);
+        UUID energyId = UUID.randomUUID();
+        when(energyService.validateAndPayRetreat(eq(active), argThat(list -> list != null && list.size() == 1 && list.get(0).equals(energyId)), eq(cardLookup)))
+                .thenReturn(new EnergyPaymentResult(true, List.of(), null));
+
+        GameAction action = new GameAction();
+        action.setType(GameActionType.RETREAT_ACTIVE);
+        action.setPlayerId(playerId);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("energyCardInstanceIdsToDiscard", List.of(energyId.toString()));
+        action.setPayload(payload);
 
         assertTrue(validator.validate(ctx, action));
     }
