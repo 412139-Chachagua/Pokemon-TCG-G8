@@ -1238,15 +1238,11 @@ class AbilitySystemTest {
 
         CardLookupPort cardLookup = mock(CardLookupPort.class);
         when(cardLookup.getCardById(any())).thenReturn(createNonSweetVeilPokemonDef());
-        PokemonCardDefinition inkayDef = new PokemonCardDefinition();
-        inkayDef.setEvolvesFrom("Inkay");
-        when(cardLookup.getCardById("pkm-inkay")).thenReturn(inkayDef);
-
         PokemonCardDefinition malamarDef = new PokemonCardDefinition();
         malamarDef.setName("Malamar");
         malamarDef.setEvolvesFrom("Inkay");
-        when(cardLookup.getCardById("pkm-malamar")).thenReturn(malamarDef);
-        when(ctx.getCardLookup()).thenReturn(cardLookup);
+        lenient().when(cardLookup.getCardById("pkm-malamar")).thenReturn(malamarDef);
+        lenient().when(ctx.getCardLookup()).thenReturn(cardLookup);
 
         UpsideDownEvolutionResolver resolver = new UpsideDownEvolutionResolver();
         resolver.resolve(ctx, player, inkay, mock(AbilityDefinition.class), new HashMap<>());
