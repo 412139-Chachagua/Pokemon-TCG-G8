@@ -82,117 +82,117 @@ class EvolutionIntegrationTest {
                 ));
     }
 
-//    @Test
-//    void shouldEvolvePokemonDuringGame() {
-//        CreateMatchRequest createReq = new CreateMatchRequest();
-//        createReq.setPlayer1Id(player1Id.toString());
-//        createReq.setPlayer1Name("Player One");
-//        createReq.setPlayer1DeckId(deck1Id.toString());
-//        createReq.setPlayer2Id(player2Id.toString());
-//        createReq.setPlayer2Name("Player Two");
-//        createReq.setPlayer2DeckId(deck2Id.toString());
-//        createReq.setQuickMatch(false);
-//
-//        MatchResponse match = matchService.createMatch(createReq);
-//        UUID matchId = UUID.fromString(match.id());
-//        assertEquals("SETUP", match.status());
-//
-//        GameState state = gameEngine.loadState(matchId);
-//
-//        // Resolve mulligan draws
-//        resolveInitialMulligansAndDraws(state, matchId);
-//
-//        // Both place active
-//        state = gameEngine.loadState(matchId);
-//        PlayerState p1 = findPlayer(state, player1Id);
-//        PlayerState p2 = findPlayer(state, player2Id);
-//
-//        UUID p1BasicId = findFirstBasicInstance(p1);
-//        assertNotNull(p1BasicId, "P1 should have a basic Pokemon");
-//        GameActionResponse resp = executeAction(matchId, "SETUP_PLACE_ACTIVE", player1Id,
-//                Map.of("cardInstanceId", p1BasicId.toString()));
-//        assertTrue(resp.success(), "P1 place active: " + errorMsg(resp));
-//
-//        resp = executeAction(matchId, "CONFIRM_SETUP", player1Id, Map.of());
-//        assertTrue(resp.success(), "P1 confirm: " + errorMsg(resp));
-//
-//        UUID p2BasicId = findFirstBasicInstance(p2);
-//        assertNotNull(p2BasicId, "P2 should have a basic Pokemon");
-//        resp = executeAction(matchId, "SETUP_PLACE_ACTIVE", player2Id,
-//                Map.of("cardInstanceId", p2BasicId.toString()));
-//        assertTrue(resp.success(), "P2 place active: " + errorMsg(resp));
-//
-//        resp = executeAction(matchId, "CONFIRM_SETUP", player2Id, Map.of());
-//        assertTrue(resp.success(), "P2 confirm: " + errorMsg(resp));
-//
-//        // Play turns until an eligible player can evolve their Charmander to Charmeleon
-//        state = gameEngine.loadState(matchId);
-//        assertEquals(MatchStatus.ACTIVE, state.getStatus());
-//
-//        boolean evolved = false;
-//        int safety = 30;
-//        while (!evolved && safety-- > 0) {
-//            state = gameEngine.loadState(matchId);
-//            UUID currentP = state.getCurrentPlayerId();
-//            PlayerState ps = findPlayer(state, currentP);
-//
-//            // Draw if in DRAW phase (and not first player's first turn)
-//            if (state.getPhase() == TurnPhase.DRAW) {
-//                // Skip auto-no-draw for first player turn 1
-//                if (state.getFirstPlayerId().equals(currentP) && state.getTurnNumber() == 1
-//                        && !state.hasPlayerCompletedFirstTurn(currentP)) {
-//                    // First player's first turn: skip draw, go to MAIN
-//                } else {
-//                    resp = executeAction(matchId, "DRAW_CARD", currentP, Map.of());
-//                    assertTrue(resp.success(), "Draw: " + errorMsg(resp));
-//                    state = gameEngine.loadState(matchId);
-//                }
-//            }
-//
-//            // If in MAIN phase
-//            if (state.getPhase() == TurnPhase.MAIN) {
-//                // Check if current player has Charmander active AND Charmeleon in hand
-//                PokemonInPlay activePkm = ps.getActivePokemon();
-//                boolean hasCharmander = activePkm != null && "seed-charmander".equals(activePkm.getCardDefinitionId());
-//                int evoIdx = hasCharmander ? findFirstEvoHandIndex(state, currentP) : -1;
-//                if (evoIdx >= 0) {
-//                    System.err.println("DEBUG - Trying evolve turn=" + state.getTurnNumber()
-//                            + " player=" + currentP
-//                            + " firstTurnDone=" + state.hasPlayerCompletedFirstTurn(currentP));
-//                    resp = executeAction(matchId, "EVOLVE_POKEMON", currentP,
-//                            Map.of("handIndex", evoIdx,
-//                                    "targetPokemonInstanceId", activePkm.getInstanceId().toString()));
-//                    System.err.println("DEBUG - Evolve result: " + resp.success()
-//                            + " err=" + (resp.error() != null ? resp.error().code() : "none"));
-//                    if (resp.success()) {
-//                        evolved = true;
-//                        break;
-//                    }
-//                }
-//
-//                // Attach energy if possible
-//                int energyIdx = findFirstEnergyHandIndex(state, currentP);
-//                if (energyIdx >= 0) {
-//                    UUID activeId = getActiveInstanceId(state, currentP);
-//                    executeAction(matchId, "ATTACH_ENERGY", currentP,
-//                            Map.of("handIndex", energyIdx, "targetPokemonInstanceId", activeId.toString()));
-//                }
-//
-//                // End turn
-//                resp = executeAction(matchId, "END_TURN", currentP, Map.of());
-//                assertTrue(resp.success(), "End turn: " + errorMsg(resp));
-//            }
-//        }
-//
-//        assertTrue(evolved, "Player with Charmander should have evolved within 30 turns");
-//
-//        state = gameEngine.loadState(matchId);
-//        UUID winnerP = findEvolvedPlayer(state);
-//        PokemonInPlay active = findPlayer(state, winnerP).getActivePokemon();
-//        assertEquals("seed-charmeleon", active.getCardDefinitionId(),
-//                "Active Pokemon should be Charmeleon after evolution");
-//        assertTrue(active.isEvolvedThisTurn(), "Evolved this turn flag should be set");
-//    }
+    @Test
+    void shouldEvolvePokemonDuringGame() {
+        CreateMatchRequest createReq = new CreateMatchRequest();
+        createReq.setPlayer1Id(player1Id.toString());
+        createReq.setPlayer1Name("Player One");
+        createReq.setPlayer1DeckId(deck1Id.toString());
+        createReq.setPlayer2Id(player2Id.toString());
+        createReq.setPlayer2Name("Player Two");
+        createReq.setPlayer2DeckId(deck2Id.toString());
+        createReq.setQuickMatch(false);
+
+        MatchResponse match = matchService.createMatch(createReq);
+        UUID matchId = UUID.fromString(match.id());
+        assertEquals("SETUP", match.status());
+
+        GameState state = gameEngine.loadState(matchId);
+
+        // Resolve mulligan draws
+        resolveInitialMulligansAndDraws(state, matchId);
+
+        // Both place active
+        state = gameEngine.loadState(matchId);
+        PlayerState p1 = findPlayer(state, player1Id);
+        PlayerState p2 = findPlayer(state, player2Id);
+
+        UUID p1BasicId = findFirstBasicInstance(p1);
+        assertNotNull(p1BasicId, "P1 should have a basic Pokemon");
+        GameActionResponse resp = executeAction(matchId, "SETUP_PLACE_ACTIVE", player1Id,
+                Map.of("cardInstanceId", p1BasicId.toString()));
+        assertTrue(resp.success(), "P1 place active: " + errorMsg(resp));
+
+        resp = executeAction(matchId, "CONFIRM_SETUP", player1Id, Map.of());
+        assertTrue(resp.success(), "P1 confirm: " + errorMsg(resp));
+
+        UUID p2BasicId = findFirstBasicInstance(p2);
+        assertNotNull(p2BasicId, "P2 should have a basic Pokemon");
+        resp = executeAction(matchId, "SETUP_PLACE_ACTIVE", player2Id,
+                Map.of("cardInstanceId", p2BasicId.toString()));
+        assertTrue(resp.success(), "P2 place active: " + errorMsg(resp));
+
+        resp = executeAction(matchId, "CONFIRM_SETUP", player2Id, Map.of());
+        assertTrue(resp.success(), "P2 confirm: " + errorMsg(resp));
+
+        // Play turns until an eligible player can evolve their Charmander to Charmeleon
+        state = gameEngine.loadState(matchId);
+        assertEquals(MatchStatus.ACTIVE, state.getStatus());
+
+        boolean evolved = false;
+        int safety = 100;
+        while (!evolved && safety-- > 0) {
+            state = gameEngine.loadState(matchId);
+            UUID currentP = state.getCurrentPlayerId();
+            PlayerState ps = findPlayer(state, currentP);
+
+            // Draw if in DRAW phase (and not first player's first turn)
+            if (state.getPhase() == TurnPhase.DRAW) {
+                // Skip auto-no-draw for first player turn 1
+                if (state.getFirstPlayerId() != null && state.getFirstPlayerId().equals(currentP) && state.getTurnNumber() == 1
+                        && !state.hasPlayerCompletedFirstTurn(currentP)) {
+                    // First player's first turn: skip draw, go to MAIN
+                } else {
+                    resp = executeAction(matchId, "DRAW_CARD", currentP, Map.of());
+                    assertTrue(resp.success(), "Draw: " + errorMsg(resp));
+                    state = gameEngine.loadState(matchId);
+                }
+            }
+
+            // If in MAIN phase
+            if (state.getPhase() == TurnPhase.MAIN) {
+                // Check if current player has Charmander active AND Charmeleon in hand
+                PokemonInPlay activePkm = ps.getActivePokemon();
+                boolean hasCharmander = activePkm != null && "seed-charmander".equals(activePkm.getCardDefinitionId());
+                int evoIdx = hasCharmander ? findFirstEvoHandIndex(state, currentP) : -1;
+                if (evoIdx >= 0) {
+                    System.err.println("DEBUG - Trying evolve turn=" + state.getTurnNumber()
+                            + " player=" + currentP
+                            + " firstTurnDone=" + state.hasPlayerCompletedFirstTurn(currentP));
+                    resp = executeAction(matchId, "EVOLVE_POKEMON", currentP,
+                            Map.of("handIndex", evoIdx,
+                                    "targetPokemonInstanceId", activePkm.getInstanceId().toString()));
+                    System.err.println("DEBUG - Evolve result: " + resp.success()
+                            + " err=" + (resp.error() != null ? resp.error().code() : "none"));
+                    if (resp.success()) {
+                        evolved = true;
+                        break;
+                    }
+                }
+
+                // Attach energy if possible
+                int energyIdx = findFirstEnergyHandIndex(state, currentP);
+                if (energyIdx >= 0) {
+                    UUID activeId = getActiveInstanceId(state, currentP);
+                    executeAction(matchId, "ATTACH_ENERGY", currentP,
+                            Map.of("handIndex", energyIdx, "targetPokemonInstanceId", activeId.toString()));
+                }
+
+                // End turn
+                resp = executeAction(matchId, "END_TURN", currentP, Map.of());
+                assertTrue(resp.success(), "End turn: " + errorMsg(resp));
+            }
+        }
+
+        assertTrue(evolved, "Player with Charmander should have evolved within 100 turns");
+
+        state = gameEngine.loadState(matchId);
+        UUID winnerP = findEvolvedPlayer(state);
+        PokemonInPlay active = findPlayer(state, winnerP).getActivePokemon();
+        assertEquals("seed-charmeleon", active.getCardDefinitionId(),
+                "Active Pokemon should be Charmeleon after evolution");
+        assertTrue(active.isEvolvedThisTurn(), "Evolved this turn flag should be set");
+    }
 
     private void resolveInitialMulligansAndDraws(GameState state, UUID matchId) {
         for (UUID pid : List.of(player1Id, player2Id)) {
