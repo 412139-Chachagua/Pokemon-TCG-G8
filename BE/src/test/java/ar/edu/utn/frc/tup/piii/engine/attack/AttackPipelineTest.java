@@ -6,6 +6,7 @@ import ar.edu.utn.frc.tup.piii.engine.attack.AttackStep.AttackStepResult;
 import ar.edu.utn.frc.tup.piii.engine.attack.steps.PreDamageStep;
 import ar.edu.utn.frc.tup.piii.engine.attack.steps.PostDamageEffectStep;
 import ar.edu.utn.frc.tup.piii.engine.model.GameState;
+import ar.edu.utn.frc.tup.piii.engine.model.PlayerState;
 import ar.edu.utn.frc.tup.piii.engine.model.PokemonInPlay;
 import ar.edu.utn.frc.tup.piii.engine.ports.CardLookupPort;
 import ar.edu.utn.frc.tup.piii.engine.ports.RandomizerPort;
@@ -407,8 +408,9 @@ class AttackPipelineTest {
 
     @Test
     void shouldSkipEffects_whenAttackCanceled() {
-        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.DRAW_CARDS, Map.of("count", 2));
-        AttackContext attackCtx = createDefaultContext();
+        UUID attackerId = UUID.randomUUID();
+        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.DRAW_CARDS, Map.of("count", 2), attackerId);
+        AttackContext attackCtx = createDefaultContextWithIds(attackerId, UUID.randomUUID());
         attackCtx.getAttacker().setCardDefinitionId("att-1");
         attackCtx.getDefender().setCardDefinitionId("def-1");
         attackCtx.setAttackCanceled(true);
@@ -421,8 +423,9 @@ class AttackPipelineTest {
 
     @Test
     void shouldSkipEffects_whenNoPostDamageEffects() {
-        EngineContext ctx = buildEngineContextEmpty();
-        AttackContext attackCtx = createDefaultContext();
+        UUID attackerId = UUID.randomUUID();
+        EngineContext ctx = buildEngineContextEmpty(attackerId);
+        AttackContext attackCtx = createDefaultContextWithIds(attackerId, UUID.randomUUID());
         attackCtx.getAttacker().setCardDefinitionId("att-1");
         attackCtx.getDefender().setCardDefinitionId("def-1");
 
@@ -434,8 +437,9 @@ class AttackPipelineTest {
 
     @Test
     void shouldApplyDrawCardsEffect_whenDrawCardsType() {
-        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.DRAW_CARDS, Map.of("count", 2));
-        AttackContext attackCtx = createDefaultContext();
+        UUID attackerId = UUID.randomUUID();
+        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.DRAW_CARDS, Map.of("count", 2), attackerId);
+        AttackContext attackCtx = createDefaultContextWithIds(attackerId, UUID.randomUUID());
         attackCtx.getAttacker().setCardDefinitionId("att-1");
         attackCtx.getDefender().setCardDefinitionId("def-1");
 
@@ -447,8 +451,9 @@ class AttackPipelineTest {
 
     @Test
     void shouldApplyRecoilEffect_whenRecoilType() {
-        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.RECOIL, Map.of("count", 2));
-        AttackContext attackCtx = createDefaultContext();
+        UUID attackerId = UUID.randomUUID();
+        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.RECOIL, Map.of("count", 2), attackerId);
+        AttackContext attackCtx = createDefaultContextWithIds(attackerId, UUID.randomUUID());
         attackCtx.getAttacker().setCardDefinitionId("att-1");
         attackCtx.getDefender().setCardDefinitionId("def-1");
 
@@ -460,6 +465,7 @@ class AttackPipelineTest {
 
     @Test
     void shouldApplyMultipleEffects_whenMultipleEffectsDefined() {
+        UUID attackerId = UUID.randomUUID();
         Map<String, Object> params1 = Map.of("count", 1);
         Map<String, Object> params2 = Map.of("count", 2);
         AttackEffect effect1 = new AttackEffect(AttackEffectType.DRAW_CARDS, params1);
@@ -476,9 +482,10 @@ class AttackPipelineTest {
         when(cardLookup.getCardById("def-1")).thenReturn(new PokemonCardDefinition());
 
         GameState state = new GameState();
+        state.setPlayers(new PlayerState[]{buildPlayerWithActive(attackerId)});
         EngineContext ctx = new EngineContext(state, cardLookup, randomizer, persister, eventPublisher);
 
-        AttackContext attackCtx = createDefaultContext();
+        AttackContext attackCtx = createDefaultContextWithIds(attackerId, UUID.randomUUID());
         attackCtx.getAttacker().setCardDefinitionId("att-1");
         attackCtx.getDefender().setCardDefinitionId("def-1");
 
@@ -490,8 +497,9 @@ class AttackPipelineTest {
 
     @Test
     void shouldApplyHealUserEffect_whenHealUserType() {
-        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.HEAL_USER, Map.of("count", 3));
-        AttackContext attackCtx = createDefaultContext();
+        UUID attackerId = UUID.randomUUID();
+        EngineContext ctx = buildEngineContextWithEffects(AttackEffectType.HEAL_USER, Map.of("count", 3), attackerId);
+        AttackContext attackCtx = createDefaultContextWithIds(attackerId, UUID.randomUUID());
         attackCtx.getAttacker().setCardDefinitionId("att-1");
         attackCtx.getDefender().setCardDefinitionId("def-1");
 
@@ -503,7 +511,7 @@ class AttackPipelineTest {
 
     // --- Helper: build EngineContext with PostDamageEffect ---
 
-    private EngineContext buildEngineContextWithEffects(AttackEffectType effectType, Map<String, Object> params) {
+    private EngineContext buildEngineContextWithEffects(AttackEffectType effectType, Map<String, Object> params, UUID attackerId) {
         AttackEffect effect = new AttackEffect(effectType, params);
 
         PokemonCardDefinition.AttackDefinition attackDef = new PokemonCardDefinition.AttackDefinition();
@@ -517,10 +525,12 @@ class AttackPipelineTest {
         when(cardLookup.getCardById("def-1")).thenReturn(new PokemonCardDefinition());
 
         GameState state = new GameState();
+        state.setPlayers(new PlayerState[]{buildPlayerWithActive(attackerId)});
+
         return new EngineContext(state, cardLookup, randomizer, persister, eventPublisher);
     }
 
-    private EngineContext buildEngineContextEmpty() {
+    private EngineContext buildEngineContextEmpty(UUID attackerId) {
         PokemonCardDefinition.AttackDefinition attackDef = new PokemonCardDefinition.AttackDefinition();
         attackDef.setDamage("40");
         attackDef.setEffects(null);
@@ -532,7 +542,23 @@ class AttackPipelineTest {
         when(cardLookup.getCardById("def-1")).thenReturn(new PokemonCardDefinition());
 
         GameState state = new GameState();
+        state.setPlayers(new PlayerState[]{buildPlayerWithActive(attackerId)});
+
         return new EngineContext(state, cardLookup, randomizer, persister, eventPublisher);
+    }
+
+    private PlayerState buildPlayerWithActive(UUID activeId) {
+        PokemonInPlay active = new PokemonInPlay();
+        active.setInstanceId(activeId);
+        active.setCardDefinitionId("att-1");
+
+        PlayerState player = new PlayerState();
+        player.setPlayerId(UUID.randomUUID());
+        player.setActivePokemon(active);
+        player.setBench(new ArrayList<>());
+        player.setHand(new ArrayList<>());
+        player.setDeck(new ArrayList<>());
+        return player;
     }
 
     // --- Helper: build EngineContext with COIN_FLIP_BEFORE_DAMAGE effect ---
@@ -629,6 +655,14 @@ class AttackPipelineTest {
         attacker.setInstanceId(UUID.randomUUID());
         PokemonInPlay defender = new PokemonInPlay();
         defender.setInstanceId(UUID.randomUUID());
+        return new AttackContext(attacker, defender, 0, null, null);
+    }
+
+    private AttackContext createDefaultContextWithIds(UUID attackerId, UUID defenderId) {
+        PokemonInPlay attacker = new PokemonInPlay();
+        attacker.setInstanceId(attackerId);
+        PokemonInPlay defender = new PokemonInPlay();
+        defender.setInstanceId(defenderId);
         return new AttackContext(attacker, defender, 0, null, null);
     }
 }
