@@ -521,4 +521,50 @@ class DamageCalculatorTest {
         assertEquals(0, result.finalDamage());
         assertFalse(defender.isPreventAllDamageNextTurn());
     }
+
+    @Test
+    void shouldNotApplyWeaknessOrResistance_whenTypesDoNotMatch() {
+        PokemonInPlay attacker = createPokemon("att-1", 0);
+        PokemonInPlay defender = createPokemon("def-1", 0);
+        PokemonCardDefinition attDef = createAttackerDef("40", List.of(EnergyType.WATER));
+        PokemonCardDefinition.WeaknessDefinition w = new PokemonCardDefinition.WeaknessDefinition();
+        w.setType(EnergyType.FIRE);
+        w.setValue("x2");
+        PokemonCardDefinition.ResistanceDefinition r = new PokemonCardDefinition.ResistanceDefinition();
+        r.setType(EnergyType.FIGHTING);
+        r.setValue("-30");
+        PokemonCardDefinition defDef = createDefenderDef(List.of(w), List.of(r), 100);
+        when(cardLookup.getCardById("att-1")).thenReturn(attDef);
+        when(cardLookup.getCardById("def-1")).thenReturn(defDef);
+
+        DamageCalculator.DamageCalculatorResult result = DamageCalculator.calculate(attacker, defender, cardLookup, 0);
+
+        assertEquals(40, result.finalDamage());
+        assertFalse(result.weaknessApplied());
+        assertFalse(result.resistanceApplied());
+    }
+
+    @Test
+    void shouldHandleNonNumericCharactersInDamageString() {
+        DamageCalculator.DamageParseResult result = DamageCalculator.parseDamage("40abc");
+        assertEquals(40, result.baseValue());
+        assertFalse(result.isMultiplier());
+    }
+
+    @Test
+    void shouldIgnoreStadiumEffectCode_whenNull() {
+        PokemonInPlay attacker = createPokemon("att-1", 0);
+        PokemonInPlay defender = createPokemon("def-1", 0);
+        when(cardLookup.getCardById("att-1")).thenReturn(createAttackerDef("40", List.of(EnergyType.FIRE)));
+        PokemonCardDefinition.WeaknessDefinition w = new PokemonCardDefinition.WeaknessDefinition();
+        w.setType(EnergyType.FIRE);
+        w.setValue("x2");
+        when(cardLookup.getCardById("def-1")).thenReturn(createDefenderDef(List.of(w), null, 100));
+
+        DamageCalculator.DamageCalculatorResult result = DamageCalculator.calculate(
+                attacker, defender, cardLookup, 0, null, null, false, false, null);
+
+        assertEquals(80, result.finalDamage());
+        assertTrue(result.weaknessApplied());
+    }
 }

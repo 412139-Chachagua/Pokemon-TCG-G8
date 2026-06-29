@@ -458,4 +458,94 @@ class StatusEffectManagerTest {
         assertEquals(1, active1.getDamageCounters());
         assertEquals(0, active2.getDamageCounters());
     }
+
+    @Test
+    void checkKoBetweenTurns_benchPokemon_removesFromBench() {
+        UUID playerId = UUID.randomUUID();
+        PokemonInPlay benchPkm = createPokemon("pkm-1");
+        benchPkm.setDamageCounters(15);
+        benchPkm.setOwnerPlayerId(playerId);
+        GameState state = createGameState(playerId);
+        PlayerState owner = state.getPlayers()[0];
+        owner.setActivePokemon(createPokemon("pkm-other"));
+        owner.setBench(new ArrayList<>(List.of(benchPkm)));
+        PokemonCardDefinition def = new PokemonCardDefinition();
+        def.setHp(100);
+        List<GameEvent> events = new ArrayList<>();
+        when(ctx.getEnergyService()).thenReturn(energyService);
+        when(cardLookup.getCardById("pkm-1")).thenReturn(def);
+
+        StatusEffectManager.checkKoBetweenTurns(benchPkm, cardLookup, state, owner, events, ctx);
+
+        assertTrue(owner.getBench().isEmpty());
+        assertNotNull(owner.getActivePokemon());
+        assertTrue(events.stream().anyMatch(e -> e.getType().equals(GameEventType.KNOCKOUT_OCCURRED.name())));
+    }
+
+    @Test
+    void checkKoBetweenTurns_exPokemon_givesTwoPrizeCards() {
+        UUID playerId = UUID.randomUUID();
+        PokemonInPlay active = createPokemon("pkm-ex-1");
+        active.setDamageCounters(15);
+        active.setOwnerPlayerId(playerId);
+        GameState state = createGameState(playerId);
+        PlayerState owner = state.getPlayers()[0];
+        owner.setActivePokemon(active);
+        owner.setBench(new ArrayList<>());
+        PlayerState opponent = state.getPlayers()[1];
+        opponent.setBench(new ArrayList<>());
+        PokemonCardDefinition def = new PokemonCardDefinition();
+        def.setHp(100);
+        def.setEx(true);
+        List<GameEvent> events = new ArrayList<>();
+        when(ctx.getEnergyService()).thenReturn(energyService);
+        when(cardLookup.getCardById("pkm-ex-1")).thenReturn(def);
+
+        StatusEffectManager.checkKoBetweenTurns(active, cardLookup, state, owner, events, ctx);
+
+        assertEquals(2, state.getPendingPrizeCount());
+        assertEquals(opponent.getPlayerId(), state.getPendingPrizeOwnerPlayerId());
+    }
+
+    @Test
+    void processBetweenTurnStatuses_multipleConditions_bothProcessed() {
+        UUID playerId = UUID.randomUUID();
+        GameState state = createGameState(playerId);
+        PokemonInPlay active = createPokemon("pkm-1");
+        active.getSpecialConditions().add(SpecialCondition.POISONED);
+        active.getSpecialConditions().add(SpecialCondition.BURNED);
+        state.getPlayers()[0].setActivePokemon(active);
+        when(ctx.getState()).thenReturn(state);
+        when(ctx.getEnergyService()).thenReturn(energyService);
+        when(randomizer.nextInt(2)).thenReturn(1);
+
+        List<GameEvent> events = StatusEffectManager.processBetweenTurnStatuses(state, randomizer, cardLookup, ctx);
+
+        assertTrue(active.getDamageCounters() >= 1);
+        assertTrue(events.stream().anyMatch(e -> e.getType().equals(GameEventType.DAMAGE_APPLIED.name())));
+    }
+
+    @Test
+    void applyCondition_reapplyingSameVolatile_reappliesCondition() {
+        PokemonInPlay pkm = createPokemon("pkm-1");
+        StatusEffectManager.applyCondition(pkm, SpecialCondition.ASLEEP);
+        StatusEffectManager.applyCondition(pkm, SpecialCondition.ASLEEP);
+
+        assertTrue(pkm.getSpecialConditions().contains(SpecialCondition.ASLEEP));
+        assertEquals(1, pkm.getSpecialConditions().size());
+    }
+
+    @Test
+    void processBetweenTurnStatuses_activeWithoutConditions_noError() {
+        UUID playerId = UUID.randomUUID();
+        GameState state = createGameState(playerId);
+        PokemonInPlay active = createPokemon("pkm-1");
+        active.setSpecialConditions(null);
+        state.getPlayers()[0].setActivePokemon(active);
+        when(ctx.getState()).thenReturn(state);
+
+        List<GameEvent> events = StatusEffectManager.processBetweenTurnStatuses(state, randomizer, cardLookup, ctx);
+
+        assertTrue(events.isEmpty());
+    }
 }
