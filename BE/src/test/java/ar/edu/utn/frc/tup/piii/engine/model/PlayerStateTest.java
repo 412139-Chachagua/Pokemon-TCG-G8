@@ -208,4 +208,82 @@ class PlayerStateTest {
 
         assertEquals(2, playerState.getMulliganRevealedCards().size());
     }
+
+    @Test
+    void setDeck_setsAndGetsDeck() {
+        List<CardInstance> deck = new ArrayList<>();
+        deck.add(new CardInstance(UUID.randomUUID(), "card-1"));
+        playerState.setDeck(deck);
+        assertEquals(deck, playerState.getDeck());
+    }
+
+    @Test
+    void setHand_setsAndGetsHand() {
+        List<CardInstance> hand = new ArrayList<>();
+        hand.add(new CardInstance(UUID.randomUUID(), "card-1"));
+        playerState.setHand(hand);
+        assertEquals(hand, playerState.getHand());
+    }
+
+    @Test
+    void setPrizes_setsAndGetsPrizes() {
+        List<CardInstance> prizes = new ArrayList<>();
+        prizes.add(new CardInstance(UUID.randomUUID(), "card-1"));
+        playerState.setPrizes(prizes);
+        assertEquals(prizes, playerState.getPrizes());
+    }
+
+    @Test
+    void setBench_setsAndGetsBench() {
+        List<PokemonInPlay> bench = new ArrayList<>();
+        PokemonInPlay pkm = new PokemonInPlay();
+        pkm.setInstanceId(UUID.randomUUID());
+        bench.add(pkm);
+        playerState.setBench(bench);
+        assertEquals(bench, playerState.getBench());
+    }
+
+    @Test
+    void setActivePokemon_setsAndGetsActive() {
+        PokemonInPlay pkm = new PokemonInPlay();
+        pkm.setInstanceId(UUID.randomUUID());
+        playerState.setActivePokemon(pkm);
+        assertEquals(pkm, playerState.getActivePokemon());
+    }
+
+    @Test
+    void setActivePokemon_null_setsNull() {
+        PokemonInPlay pkm = new PokemonInPlay();
+        pkm.setInstanceId(UUID.randomUUID());
+        playerState.setActivePokemon(pkm);
+        playerState.setActivePokemon(null);
+        assertNull(playerState.getActivePokemon());
+    }
+
+    @Test
+    void setDisplayName_setsAndGetsDisplayName() {
+        playerState.setDisplayName("Player 1");
+        assertEquals("Player 1", playerState.getDisplayName());
+    }
+
+    @Test
+    void setDisplayName_null_setsNull() {
+        playerState.setDisplayName(null);
+        assertNull(playerState.getDisplayName());
+    }
+
+    @Test
+    void getDiscard_returnsMutableList() {
+        CardInstance card = new CardInstance(UUID.randomUUID(), "card-1");
+        playerState.getDiscard().add(card);
+        assertTrue(playerState.discardContains(card.getInstanceId()));
+    }
+
+    @Test
+    void setDiscard_nonNull_setsDiscard() {
+        List<CardInstance> discard = new ArrayList<>();
+        discard.add(new CardInstance(UUID.randomUUID(), "card-1"));
+        playerState.setDiscard(discard);
+        assertEquals(discard, playerState.getDiscard());
+    }
 }
