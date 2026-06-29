@@ -94,4 +94,49 @@ class HandlerHelperTest {
         PokemonInPlay result = HandlerHelper.findPokemon(player, benchId);
         assertSame(benched, result);
     }
+
+    @Test
+    void shouldReturnNull_whenActiveIsNullAndBenchEmpty() {
+        PlayerState player = new PlayerState();
+        player.setActivePokemon(null);
+        player.setBench(new ArrayList<>());
+
+        PokemonInPlay result = HandlerHelper.findPokemon(player, UUID.randomUUID());
+        assertNull(result);
+    }
+
+    @Test
+    void shouldFindSecondPokemon_whenMultipleOnBench() {
+        UUID firstBenchId = UUID.randomUUID();
+        UUID secondBenchId = UUID.randomUUID();
+
+        PokemonInPlay first = new PokemonInPlay();
+        first.setInstanceId(firstBenchId);
+        PokemonInPlay second = new PokemonInPlay();
+        second.setInstanceId(secondBenchId);
+
+        PlayerState player = new PlayerState();
+        player.setActivePokemon(null);
+        player.setBench(new ArrayList<>(List.of(first, second)));
+
+        PokemonInPlay result = HandlerHelper.findPokemon(player, secondBenchId);
+        assertSame(second, result);
+    }
+
+    @Test
+    void shouldPrioritizeActiveOverBench_whenSameIdInBoth() {
+        UUID sharedId = UUID.randomUUID();
+
+        PokemonInPlay active = new PokemonInPlay();
+        active.setInstanceId(sharedId);
+        PokemonInPlay benched = new PokemonInPlay();
+        benched.setInstanceId(sharedId);
+
+        PlayerState player = new PlayerState();
+        player.setActivePokemon(active);
+        player.setBench(new ArrayList<>(List.of(benched)));
+
+        PokemonInPlay result = HandlerHelper.findPokemon(player, sharedId);
+        assertSame(active, result);
+    }
 }
