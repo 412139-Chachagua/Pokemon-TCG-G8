@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
+@Order(1)
 @Slf4j
 public class SeederTestConfig {
 
