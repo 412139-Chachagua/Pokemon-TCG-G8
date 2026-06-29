@@ -14,6 +14,12 @@ export interface DeckCardEntry {
   quantity: number;
 }
 
+export interface DeckRule {
+  code: string;
+  label: string;
+  valid: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DeckBuilderFacadeService {
   private readonly deckApi = inject(DeckApiService);
@@ -51,6 +57,47 @@ export class DeckBuilderFacadeService {
       .filter((c) => c.supertype === 'ENERGY')
       .reduce((sum, c) => sum + c.quantity, 0),
   );
+
+  readonly rules = computed(() => {
+    const cards = this.cards();
+    const total = this.totalCards();
+    const basicCount = this.basicPokemonCount();
+
+    const result: DeckRule[] = [
+      { code: 'DECK_SIZE', label: '60 cartas exactas', valid: total === 60 },
+      { code: 'BASIC_POKEMON', label: 'Al menos 1 Pokémon Básico', valid: basicCount >= 1 },
+    ];
+
+    let maxCopiesValid = true;
+    for (const card of cards) {
+      if (!card.isBasicEnergy && card.quantity > 4) {
+        maxCopiesValid = false;
+        break;
+      }
+    }
+    if (maxCopiesValid) {
+      const pokemonByName = new Map<string, number>();
+      const specialEnergyByName = new Map<string, number>();
+      for (const card of cards) {
+        if (card.supertype === 'POKEMON') {
+          pokemonByName.set(card.name, (pokemonByName.get(card.name) ?? 0) + card.quantity);
+        } else if (card.supertype === 'ENERGY' && !card.isBasicEnergy) {
+          specialEnergyByName.set(card.name, (specialEnergyByName.get(card.name) ?? 0) + card.quantity);
+        }
+      }
+      for (const count of pokemonByName.values()) {
+        if (count > 4) { maxCopiesValid = false; break; }
+      }
+      if (maxCopiesValid) {
+        for (const count of specialEnergyByName.values()) {
+          if (count > 4) { maxCopiesValid = false; break; }
+        }
+      }
+    }
+    result.push({ code: 'MAX_COPIES', label: 'Máx. 4 copias por carta (excepto Energía Básica)', valid: maxCopiesValid });
+
+    return result;
+  });
 
   addCard(cardId: string, name: string, supertype: string, subtypes: string[] = [], stage?: string, isBasicEnergy = false): void {
     this._cards.update((prev) => {

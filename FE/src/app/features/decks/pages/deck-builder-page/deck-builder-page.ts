@@ -57,6 +57,7 @@ import { CardPreviewOverlayComponent } from '../../../match/components/card-prev
             [energyCount]="facade.energyCount()"
             [basicPokemonCount]="facade.basicPokemonCount()"
             [validation]="validationResult()"
+            [rules]="facade.rules()"
           />
 
           <div class="flex gap-2">
@@ -158,10 +159,6 @@ export class DeckBuilderPage implements OnDestroy {
         return;
       }
     }
-    if (event.subtypes.includes('ACE_SPEC') && this.facade.aceSpecCount() >= 1) {
-      this.notificationService.show('Solo se permite 1 carta ACE SPEC por mazo', 'warning');
-      return;
-    }
     this.facade.addCard(event.cardId, event.name, event.supertype, event.subtypes, event.stage);
     this.validationResult.set(null);
   }
@@ -169,10 +166,6 @@ export class DeckBuilderPage implements OnDestroy {
   onIncrement(cardId: string): void {
     const entry = this.facade.cards().find((c) => c.cardId === cardId);
     if (entry) {
-      if (entry.subtypes.includes('ACE_SPEC') && this.facade.aceSpecCount() >= 1) {
-        this.notificationService.show('Solo se permite 1 carta ACE SPEC por mazo', 'warning');
-        return;
-      }
       this.facade.addCard(cardId, entry.name, entry.supertype, entry.subtypes, entry.stage, entry.isBasicEnergy);
     }
     this.validationResult.set(null);
