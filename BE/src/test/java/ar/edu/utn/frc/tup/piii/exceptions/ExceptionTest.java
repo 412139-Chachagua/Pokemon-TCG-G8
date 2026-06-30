@@ -80,4 +80,18 @@ class ExceptionTest {
         assertThrows(RuntimeException.class, () -> { throw new StorageException("test"); });
         assertThrows(RuntimeException.class, () -> { throw new ConflictException("test"); });
     }
+
+    @Test
+    void shouldHandleNullMessageInDomainException() {
+        DomainException ex = new DomainException("CODE", null);
+        assertNull(ex.getMessage());
+        assertEquals("CODE", ex.getCode());
+    }
+
+    @Test
+    void shouldHandleNullCauseInStorageExceptionWithCauseConstructor() {
+        StorageException ex = new StorageException("msg", null);
+        assertEquals("msg", ex.getMessage());
+        assertNull(ex.getCause());
+    }
 }
