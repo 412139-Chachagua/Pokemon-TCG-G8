@@ -29,36 +29,29 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CORS
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // CORS habilitado (usa el bean global de abajo)
+                .cors(cors -> {})
 
-                // CSRF desactivado (JWT stateless)
+                // JWT → stateless API
                 .csrf(csrf -> csrf.disable())
 
-                // Para H2 console / frames si la usás
+                // H2 / frames si lo usás
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
 
-                // Stateless API
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // Authorization rules
                 .authorizeHttpRequests(auth -> auth
+                        // IMPORTANTÍSIMO: preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .requestMatchers("/", "/error").permitAll()
-
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
-
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
                         .requestMatchers("/h2-console/**").permitAll()
-
                         .requestMatchers("/ws/**").permitAll()
-
                         .requestMatchers(HttpMethod.GET, "/api/cards/**").permitAll()
-
                         .requestMatchers("/uploads/**").permitAll()
 
                         .anyRequest().authenticated()
@@ -75,13 +68,12 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        // ORIGINS (frontend local + render)
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:4200",
-                "https://pokemon-tcg-g8.onrender.com"
+                "https://pokemon-tcg-g8.onrender.com",
+                "https://*.onrender.com"
         ));
 
-        // METHODS
         config.setAllowedMethods(List.of(
                 "GET",
                 "POST",
@@ -91,14 +83,14 @@ public class SecurityConfig {
                 "OPTIONS"
         ));
 
-        // HEADERS
         config.setAllowedHeaders(List.of("*"));
 
-        // JWT usa Authorization header
         config.setExposedHeaders(List.of("Authorization"));
 
-        // IMPORTANTE: JWT → no necesitas cookies
+        // IMPORTANTE para JWT: false evita conflictos raros en CORS
         config.setAllowCredentials(false);
+
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
