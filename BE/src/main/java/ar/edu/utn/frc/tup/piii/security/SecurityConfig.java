@@ -29,21 +29,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // CSRF desactivado (JWT stateless)
                 .csrf(csrf -> csrf.disable())
+
+                // Para H2 console / frames si la usás
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Stateless API
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // Authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers("/", "/error").permitAll()
+
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
                         .requestMatchers("/h2-console/**").permitAll()
+
                         .requestMatchers("/ws/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/cards/**").permitAll()
+
                         .requestMatchers("/uploads/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
+
+                // JWT filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -51,13 +72,16 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration config = new CorsConfiguration();
 
+        // ORIGINS (frontend local + render)
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:4200",
-                "https://*.onrender.com"
+                "https://pokemon-tcg-g8.onrender.com"
         ));
 
+        // METHODS
         config.setAllowedMethods(List.of(
                 "GET",
                 "POST",
@@ -67,9 +91,14 @@ public class SecurityConfig {
                 "OPTIONS"
         ));
 
+        // HEADERS
         config.setAllowedHeaders(List.of("*"));
+
+        // JWT usa Authorization header
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true);
+
+        // IMPORTANTE: JWT → no necesitas cookies
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
