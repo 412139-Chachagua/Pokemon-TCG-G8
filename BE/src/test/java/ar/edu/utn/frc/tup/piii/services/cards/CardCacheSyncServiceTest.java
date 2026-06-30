@@ -16,8 +16,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,12 +44,18 @@ class CardCacheSyncServiceTest {
     private CacheManager cacheManager;
     @Mock
     private Cache cache;
+    @Mock
+    private TransactionTemplate transactionTemplate;
 
     private CardCacheSyncService cardCacheSyncService;
 
     @BeforeEach
     void setUp() {
-        cardCacheSyncService = new CardCacheSyncService(pokemonTcgApiClient, cardJpaRepository, cardMapper, cacheManager);
+        cardCacheSyncService = new CardCacheSyncService(pokemonTcgApiClient, cardJpaRepository, cardMapper, cacheManager, transactionTemplate);
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<CardSyncResponse> callback = invocation.getArgument(0);
+            return callback.doInTransaction(mock(TransactionStatus.class));
+        });
     }
 
     @Nested
@@ -65,8 +77,8 @@ class CardCacheSyncServiceTest {
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto1, dto2));
             when(cardMapper.toCardEntity(dto1)).thenReturn(entity1);
             when(cardMapper.toCardEntity(dto2)).thenReturn(entity2);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
-            when(cardJpaRepository.existsById("xy1-2")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
+            when(cardJpaRepository.findById("xy1-2")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -105,7 +117,7 @@ class CardCacheSyncServiceTest {
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto));
             when(cardMapper.toCardEntity(dto)).thenReturn(entity);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -125,10 +137,13 @@ class CardCacheSyncServiceTest {
 
             CardEntity entity = new CardEntity();
             entity.setId("xy1-1");
+            CardEntity existing = new CardEntity();
+            existing.setId("xy1-1");
+            existing.setCreatedAt(Instant.now());
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto));
             when(cardMapper.toCardEntity(dto)).thenReturn(entity);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(true);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.of(existing));
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -149,12 +164,15 @@ class CardCacheSyncServiceTest {
             entity1.setId("xy1-1");
             CardEntity entity2 = new CardEntity();
             entity2.setId("xy1-2");
+            CardEntity existing2 = new CardEntity();
+            existing2.setId("xy1-2");
+            existing2.setCreatedAt(Instant.now());
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto1, dto2));
             when(cardMapper.toCardEntity(dto1)).thenReturn(entity1);
             when(cardMapper.toCardEntity(dto2)).thenReturn(entity2);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
-            when(cardJpaRepository.existsById("xy1-2")).thenReturn(true);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
+            when(cardJpaRepository.findById("xy1-2")).thenReturn(Optional.of(existing2));
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -175,12 +193,18 @@ class CardCacheSyncServiceTest {
             entity1.setId("xy1-1");
             CardEntity entity2 = new CardEntity();
             entity2.setId("xy1-2");
+            CardEntity existing1 = new CardEntity();
+            existing1.setId("xy1-1");
+            existing1.setCreatedAt(Instant.now());
+            CardEntity existing2 = new CardEntity();
+            existing2.setId("xy1-2");
+            existing2.setCreatedAt(Instant.now());
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto1, dto2));
             when(cardMapper.toCardEntity(dto1)).thenReturn(entity1);
             when(cardMapper.toCardEntity(dto2)).thenReturn(entity2);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(true);
-            when(cardJpaRepository.existsById("xy1-2")).thenReturn(true);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.of(existing1));
+            when(cardJpaRepository.findById("xy1-2")).thenReturn(Optional.of(existing2));
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -203,7 +227,7 @@ class CardCacheSyncServiceTest {
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto));
             when(cardMapper.toCardEntity(dto)).thenReturn(entity);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             cardCacheSyncService.syncAll();
@@ -230,7 +254,7 @@ class CardCacheSyncServiceTest {
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto));
             when(cardMapper.toCardEntity(dto)).thenReturn(entity);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(null);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -248,7 +272,7 @@ class CardCacheSyncServiceTest {
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto));
             when(cardMapper.toCardEntity(dto)).thenReturn(entity);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenThrow(new RuntimeException("Cache unavailable"));
 
             assertDoesNotThrow(() -> cardCacheSyncService.syncAll());
@@ -287,7 +311,7 @@ class CardCacheSyncServiceTest {
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto1, dto2));
             when(cardMapper.toCardEntity(dto1)).thenReturn(entity1);
             when(cardMapper.toCardEntity(dto2)).thenThrow(new RuntimeException("Mapping failed for dto2"));
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -313,9 +337,9 @@ class CardCacheSyncServiceTest {
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto1, dto2));
             when(cardMapper.toCardEntity(dto1)).thenReturn(entity1);
             when(cardMapper.toCardEntity(dto2)).thenReturn(entity2);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             doThrow(new RuntimeException("DB error")).when(cardJpaRepository).save(entity1);
-            when(cardJpaRepository.existsById("xy1-2")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-2")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             CardSyncResponse result = cardCacheSyncService.syncAll();
@@ -360,7 +384,7 @@ class CardCacheSyncServiceTest {
 
             when(pokemonTcgApiClient.fetchAllCards()).thenReturn(List.of(dto));
             when(cardMapper.toCardEntity(dto)).thenReturn(entity);
-            when(cardJpaRepository.existsById("xy1-1")).thenReturn(false);
+            when(cardJpaRepository.findById("xy1-1")).thenReturn(Optional.empty());
             when(cacheManager.getCache("cards")).thenReturn(cache);
 
             cardCacheSyncService.syncAll();
