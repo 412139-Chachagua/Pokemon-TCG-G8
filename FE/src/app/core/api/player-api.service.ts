@@ -3,12 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClientService } from './api-client.service';
 import { PlayerResponse, UpdatePlayerRequest } from '../../shared/models/player.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class PlayerApiService {
   private readonly apiClient = inject(ApiClientService);
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8080/api';
+private readonly baseUrl = environment.apiUrl;
 
   listAll(): Observable<PlayerResponse[]> {
     return this.apiClient.get<PlayerResponse[]>('/players');

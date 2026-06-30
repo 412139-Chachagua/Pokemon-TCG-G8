@@ -6,12 +6,13 @@ import { ChatMessage } from '../../shared/models/chat.models';
 import { GameActionResponse, GameEventDto } from '../../shared/models/game-action.models';
 import { PrivatePlayerStateModel } from '../../shared/models/game-state.models';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 export type ConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
 
 @Injectable({ providedIn: 'root' })
 export class MatchSocketService {
-  private readonly brokerUrl = 'http://localhost:8080/ws';
+private readonly brokerUrl = environment.apiUrl.replace('/api', '') + '/ws';
   private readonly auth = inject(AuthService);
 
   private client: Client | null = null;

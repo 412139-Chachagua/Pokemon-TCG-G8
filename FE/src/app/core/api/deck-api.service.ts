@@ -3,12 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClientService } from './api-client.service';
 import { CreateDeckRequest, DeckResponse, DeckValidationResponse, UpdateDeckRequest } from '../../shared/models/deck.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DeckApiService {
   private readonly apiClient = inject(ApiClientService);
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8080/api';
+private readonly baseUrl = environment.apiUrl;
 
   listByPlayer(playerId: string): Observable<DeckResponse[]> {
     return this.apiClient.get<DeckResponse[]>(`/decks?playerId=${playerId}`);
