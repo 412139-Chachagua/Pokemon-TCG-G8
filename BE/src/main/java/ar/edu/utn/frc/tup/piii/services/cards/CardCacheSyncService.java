@@ -8,6 +8,7 @@ import ar.edu.utn.frc.tup.piii.repositories.entities.CardEntity;
 import ar.edu.utn.frc.tup.piii.repositories.jpa.CardJpaRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.support.TransactionTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.CacheManager;
@@ -29,6 +30,7 @@ public class CardCacheSyncService {
     private final CardJpaRepository cardJpaRepository;
     private final CardMapper cardMapper;
     private final CacheManager cacheManager;
+    private final TransactionTemplate transactionTemplate;
 
     @EventListener(ApplicationReadyEvent.class)
     public void synchronizeAllCards() {
@@ -45,7 +47,7 @@ public class CardCacheSyncService {
         });
     }
 
-    @Scheduled(fixedRate = 86400000)
+    @Scheduled(fixedRate = 86400000, initialDelay = 10000)
     public void scheduledSync() {
         log.info("=== Sincronizacion diaria de cartas ===");
         try {
@@ -64,6 +66,9 @@ public class CardCacheSyncService {
                 return false;
             }
             CardEntity entity = cardMapper.toCardEntity(dto);
+            cardJpaRepository.findById(entity.getId()).ifPresent(existing ->
+                    entity.setCreatedAt(existing.getCreatedAt())
+            );
             cardJpaRepository.save(entity);
             org.springframework.cache.Cache cardsCache = cacheManager.getCache("cards");
             if (cardsCache != null) {
@@ -77,41 +82,40 @@ public class CardCacheSyncService {
         }
     }
 
-    @Transactional
     public CardSyncResponse syncAll() {
-        log.info("=== Iniciando sincronizacion de cartas Pokemon TCG - Set XY1 ===");
-        int totalNew = 0;
-        int totalUpdated = 0;
+        return transactionTemplate.execute(status -> {
+            log.info("=== Iniciando sincronizacion de cartas Pokemon TCG - Set XY1 ===");
+            int totalNew = 0;
+            int totalUpdated = 0;
 
-        try {
-            List<PokemonTcgApiCardDto> allCards = pokemonTcgApiClient.fetchAllCards();
+            try {
+                List<PokemonTcgApiCardDto> allCards = pokemonTcgApiClient.fetchAllCards();
 
-            log.info("Total cartas obtenidas: {}", allCards.size());
+                log.info("Total cartas obtenidas: {}", allCards.size());
 
-            for (PokemonTcgApiCardDto dto : allCards) {
-                try {
-                    CardEntity entity = cardMapper.toCardEntity(dto);
-                    if (cardJpaRepository.existsById(entity.getId())) {
+                for (PokemonTcgApiCardDto dto : allCards) {
+                    try {
+                        CardEntity entity = cardMapper.toCardEntity(dto);
+                        cardJpaRepository.findById(entity.getId()).ifPresent(existing ->
+                                entity.setCreatedAt(existing.getCreatedAt())
+                        );
                         cardJpaRepository.save(entity);
-                        totalUpdated++;
-                    } else {
-                        cardJpaRepository.save(entity);
-                        totalNew++;
+                        if (entity.getCreatedAt() != null) totalUpdated++; else totalNew++;
+                    } catch (Exception e) {
+                        log.error("Error guardando card {}: {}", dto.id(), e.getMessage(), e);
                     }
-                } catch (Exception e) {
-                    log.error("Error guardando card {}: {}", dto.id(), e.getMessage(), e);
                 }
-            }
 
-            org.springframework.cache.Cache cardsCache = cacheManager.getCache("cards");
-            if (cardsCache != null) {
-                cardsCache.clear();
+                org.springframework.cache.Cache cardsCache = cacheManager.getCache("cards");
+                if (cardsCache != null) {
+                    cardsCache.clear();
+                }
+                log.info("=== Sincronizacion completada con exito ===");
+                return new CardSyncResponse(true, "Sync completed.", totalNew, totalUpdated);
+            } catch (Exception e) {
+                log.error("=== FALLO la sincronizacion: {} ===", e.getMessage(), e);
+                return new CardSyncResponse(false, "Sync failed: " + e.getMessage(), totalNew, totalUpdated);
             }
-            log.info("=== Sincronizacion completada con exito ===");
-            return new CardSyncResponse(true, "Sync completed.", totalNew, totalUpdated);
-        } catch (Exception e) {
-            log.error("=== FALLO la sincronizacion: {} ===", e.getMessage(), e);
-            return new CardSyncResponse(false, "Sync failed: " + e.getMessage(), totalNew, totalUpdated);
-        }
+        });
     }
 }

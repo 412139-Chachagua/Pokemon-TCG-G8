@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "cards")
-public class CardEntity {
+public class CardEntity implements Persistable<String> {
 
     @Id
     @Column(name = "id", length = 80)
@@ -114,6 +115,11 @@ public class CardEntity {
 
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CardResistanceEntity> resistances = new ArrayList<>();
+
+    @Override
+    public boolean isNew() {
+        return createdAt == null;
+    }
 
     @PrePersist
     protected void onCreate() {
