@@ -152,6 +152,7 @@ export class DeckBuilderPage implements OnDestroy {
   }
 
   onCardSelected(event: { cardId: string; name: string; supertype: string; subtypes: string[]; stage?: string }): void {
+    const isBasicEnergy = event.supertype === 'ENERGY' && event.subtypes?.some(s => s.toLowerCase() === 'basic');
     if (event.supertype !== 'ENERGY') {
       const existing = this.facade.cards().find((c) => c.cardId === event.cardId);
       if (existing && existing.quantity >= 4) {
@@ -159,7 +160,7 @@ export class DeckBuilderPage implements OnDestroy {
         return;
       }
     }
-    this.facade.addCard(event.cardId, event.name, event.supertype, event.subtypes, event.stage);
+    this.facade.addCard(event.cardId, event.name, event.supertype, event.subtypes, event.stage, isBasicEnergy);
     this.validationResult.set(null);
   }
 

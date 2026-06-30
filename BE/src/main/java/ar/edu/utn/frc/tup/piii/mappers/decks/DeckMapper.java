@@ -2,6 +2,7 @@ package ar.edu.utn.frc.tup.piii.mappers.decks;
 
 import ar.edu.utn.frc.tup.piii.domain.cards.CardDefinition;
 import ar.edu.utn.frc.tup.piii.domain.cards.EnergyCardDefinition;
+import ar.edu.utn.frc.tup.piii.domain.cards.EnergyCardType;
 import ar.edu.utn.frc.tup.piii.domain.cards.PokemonCardDefinition;
 import ar.edu.utn.frc.tup.piii.domain.decks.Deck;
 import ar.edu.utn.frc.tup.piii.domain.decks.DeckCard;
@@ -47,7 +48,8 @@ public class DeckMapper {
         CardDefinition def = cardLookupPort.getCardById(entity.getCardId());
         String name = def != null ? def.getName() : entity.getCardId();
         String supertype = def != null ? def.getSupertype() : "UNKNOWN";
-        boolean isBasicEnergy = def instanceof EnergyCardDefinition;
+        boolean isBasicEnergy = def instanceof EnergyCardDefinition energy
+                && energy.getEnergyCardType() == EnergyCardType.BASIC;
         List<String> subtypes = def != null && def.getSubtypes() != null ? def.getSubtypes() : List.of();
         String stage = def instanceof PokemonCardDefinition pokemon ? pokemon.getStage() : null;
         return new DeckCardResponse(entity.getCardId(), name, entity.getQuantity(), supertype, isBasicEnergy, subtypes, stage);
