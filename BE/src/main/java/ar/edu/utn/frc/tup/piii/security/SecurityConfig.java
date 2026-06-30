@@ -87,8 +87,8 @@ public class SecurityConfig {
 
         config.setExposedHeaders(List.of("Authorization"));
 
-        // IMPORTANTE para JWT: false evita conflictos raros en CORS
-        config.setAllowCredentials(false);
+        // Necesario para SockJS/STOMP con withCredentials=true entre subdominios
+        config.setAllowCredentials(true);
 
         config.setMaxAge(3600L);
 
